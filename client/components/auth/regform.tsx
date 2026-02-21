@@ -152,28 +152,8 @@ export default function RegisterForm() {
                 </button>
             </form>
 
-            {/* Divider */}
-            <div className="my-4 flex items-center gap-4">
-                <div className="flex-1 h-px bg-[#7C3AED]/20"></div>
-                <span className="text-sm text-[#94A3B8]">or continue with</span>
-                <div className="flex-1 h-px bg-[#7C3AED]/20"></div>
-            </div>
-
-            {/* Google OAuth */}
-            <GoogleAuth
-                buttonText="signup_with"
-                redirectPath="/dashboard"
-                onSuccess={(response) => {
-                    console.log("Google signup successful:", response);
-                    navigate("/dashboard", true);
-                }}
-                onError={(error) => {
-                    console.error("Google signup failed:", error);
-                }}
-            />
-
             {/* Sign in link */}
-            <p className="mt-2 text-center text-[#94A3B8]">
+            <p className="mt-5 text-center text-[#94A3B8]">
                 Already have an account?{" "}
                 <button
                     onClick={() => navigate("/login")}
