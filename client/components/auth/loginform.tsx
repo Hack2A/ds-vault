@@ -28,12 +28,17 @@ export default function LoginForm() {
 
     return (
         <div className="w-full max-w-md">
+            <div className="mb-8">
+                <h2 className="text-3xl font-bold text-[#F1F5F9] mb-2">Sign In</h2>
+                <p className="text-[#94A3B8]">Enter your credentials to access your vault</p>
+            </div>
+
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 {/* Email Field */}
                 <div>
                     <label
                         htmlFor="email"
-                        className="block text-sm font-medium text-gray-700 mb-2"
+                        className="block text-sm font-medium text-[#F1F5F9] mb-2"
                     >
                         Email
                     </label>
@@ -47,11 +52,11 @@ export default function LoginForm() {
                                 message: "Invalid email address",
                             },
                         })}
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full px-4 py-3 bg-[#1E293B] border border-[#7C3AED]/30 rounded-xl text-[#F1F5F9] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent transition-all"
                         placeholder="Enter your email"
                     />
                     {errors.email && (
-                        <p className="mt-2 text-sm text-red-500">{errors.email.message}</p>
+                        <p className="mt-2 text-sm text-red-400">{errors.email.message}</p>
                     )}
                 </div>
 
@@ -59,7 +64,7 @@ export default function LoginForm() {
                 <div>
                     <label
                         htmlFor="password"
-                        className="block text-sm font-medium text-gray-700 mb-2"
+                        className="block text-sm font-medium text-[#F1F5F9] mb-2"
                     >
                         Password
                     </label>
@@ -73,11 +78,11 @@ export default function LoginForm() {
                                 message: "Password must be at least 6 characters",
                             },
                         })}
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full px-4 py-3 bg-[#1E293B] border border-[#7C3AED]/30 rounded-xl text-[#F1F5F9] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent transition-all"
                         placeholder="Enter your password"
                     />
                     {errors.password && (
-                        <p className="mt-2 text-sm text-red-500">
+                        <p className="mt-2 text-sm text-red-400">
                             {errors.password.message}
                         </p>
                     )}
@@ -86,11 +91,18 @@ export default function LoginForm() {
                 {/* Submit Button */}
                 <button
                     type="submit"
-                    className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white"
+                    className="w-full py-3 px-4 bg-linear-to-r from-[#5B21B6] to-[#7C3AED] text-white font-semibold rounded-xl shadow-lg shadow-[#7C3AED]/30 hover:shadow-[#7C3AED]/50 hover:scale-[1.02] transition-all focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/50 cursor-pointer"
                 >
                     Sign In
                 </button>
             </form>
+
+            {/* Divider */}
+            <div className="my-4 flex items-center gap-4">
+                <div className="flex-1 h-px bg-[#7C3AED]/20"></div>
+                <span className="text-sm text-[#94A3B8]">or continue with</span>
+                <div className="flex-1 h-px bg-[#7C3AED]/20"></div>
+            </div>
 
             {/* Google OAuth */}
             <GoogleAuth
@@ -104,6 +116,17 @@ export default function LoginForm() {
                     console.error("Google login failed:", error);
                 }}
             />
+
+            {/* Sign up link */}
+            <p className="mt-2 text-center text-[#94A3B8]">
+                Don't have an account?{" "}
+                <button
+                    onClick={() => navigate("/register")}
+                    className="text-[#10B981] hover:text-[#10B981]/80 font-semibold transition-colors cursor-pointer"
+                >
+                    Sign up
+                </button>
+            </p>
         </div>
     );
 }

@@ -26,13 +26,18 @@ export default function RegisterForm() {
     };
 
     return (
-        <div className="w-full max-w-md">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div className="w-full max-w-md h-full flex flex-col justify-center">
+            <div className="mb-8">
+                <h2 className="text-3xl font-bold text-[#F1F5F9] mb-2">Create Account</h2>
+                <p className="text-[#94A3B8]">Get started with your secure vault</p>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
                 {/* Email Field */}
                 <div>
                     <label
                         htmlFor="email"
-                        className="block text-sm font-medium text-gray-700 mb-2"
+                        className="block text-sm font-medium text-[#F1F5F9] mb-2"
                     >
                         Email
                     </label>
@@ -46,11 +51,11 @@ export default function RegisterForm() {
                                 message: "Invalid email address",
                             },
                         })}
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full px-4 py-3 bg-[#1E293B] border border-[#7C3AED]/30 rounded-xl text-[#F1F5F9] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent transition-all"
                         placeholder="Enter your email"
                     />
                     {errors.email && (
-                        <p className="mt-2 text-sm text-red-500">{errors.email.message}</p>
+                        <p className="mt-2 text-sm text-red-400">{errors.email.message}</p>
                     )}
                 </div>
 
@@ -58,7 +63,7 @@ export default function RegisterForm() {
                 <div>
                     <label
                         htmlFor="uname"
-                        className="block text-sm font-medium text-gray-700 mb-2"
+                        className="block text-sm font-medium text-[#F1F5F9] mb-2"
                     >
                         Username
                     </label>
@@ -76,11 +81,11 @@ export default function RegisterForm() {
                                 message: "Username can only contain letters, numbers, and underscores",
                             },
                         })}
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full px-4 py-3 bg-[#1E293B] border border-[#7C3AED]/30 rounded-xl text-[#F1F5F9] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent transition-all"
                         placeholder="Enter your username"
                     />
                     {errors.uname && (
-                        <p className="mt-2 text-sm text-red-500">{errors.uname.message}</p>
+                        <p className="mt-2 text-sm text-red-400">{errors.uname.message}</p>
                     )}
                 </div>
 
@@ -88,7 +93,7 @@ export default function RegisterForm() {
                 <div>
                     <label
                         htmlFor="password"
-                        className="block text-sm font-medium text-gray-700 mb-2"
+                        className="block text-sm font-medium text-[#F1F5F9] mb-2"
                     >
                         Password
                     </label>
@@ -102,11 +107,11 @@ export default function RegisterForm() {
                                 message: "Password must be at least 6 characters",
                             },
                         })}
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full px-4 py-3 bg-[#1E293B] border border-[#7C3AED]/30 rounded-xl text-[#F1F5F9] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent transition-all"
                         placeholder="Enter your password"
                     />
                     {errors.password && (
-                        <p className="mt-2 text-sm text-red-500">
+                        <p className="mt-2 text-sm text-red-400">
                             {errors.password.message}
                         </p>
                     )}
@@ -116,7 +121,7 @@ export default function RegisterForm() {
                 <div>
                     <label
                         htmlFor="confirmPassword"
-                        className="block text-sm font-medium text-gray-700 mb-2"
+                        className="block text-sm font-medium text-[#F1F5F9] mb-2"
                     >
                         Confirm Password
                     </label>
@@ -128,11 +133,11 @@ export default function RegisterForm() {
                             validate: (value) =>
                                 value === password || "Passwords do not match",
                         })}
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full px-4 py-3 bg-[#1E293B] border border-[#7C3AED]/30 rounded-xl text-[#F1F5F9] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent transition-all"
                         placeholder="Confirm your password"
                     />
                     {errors.confirmPassword && (
-                        <p className="mt-2 text-sm text-red-500">
+                        <p className="mt-2 text-sm text-red-400">
                             {errors.confirmPassword.message}
                         </p>
                     )}
@@ -141,11 +146,18 @@ export default function RegisterForm() {
                 {/* Submit Button */}
                 <button
                     type="submit"
-                    className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white"
+                    className="w-full py-3 px-4 bg-linear-to-r from-[#5B21B6] to-[#7C3AED] text-white font-semibold rounded-xl shadow-lg shadow-[#7C3AED]/30 hover:shadow-[#7C3AED]/50 hover:scale-[1.02] transition-all focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/50 cursor-pointer"
                 >
-                    Sign Up
+                    Create Account
                 </button>
             </form>
+
+            {/* Divider */}
+            <div className="my-4 flex items-center gap-4">
+                <div className="flex-1 h-px bg-[#7C3AED]/20"></div>
+                <span className="text-sm text-[#94A3B8]">or continue with</span>
+                <div className="flex-1 h-px bg-[#7C3AED]/20"></div>
+            </div>
 
             {/* Google OAuth */}
             <GoogleAuth
@@ -159,6 +171,17 @@ export default function RegisterForm() {
                     console.error("Google signup failed:", error);
                 }}
             />
+
+            {/* Sign in link */}
+            <p className="mt-2 text-center text-[#94A3B8]">
+                Already have an account?{" "}
+                <button
+                    onClick={() => navigate("/login")}
+                    className="text-[#10B981] hover:text-[#10B981]/80 font-semibold transition-colors cursor-pointer"
+                >
+                    Sign in
+                </button>
+            </p>
         </div>
     );
 }
