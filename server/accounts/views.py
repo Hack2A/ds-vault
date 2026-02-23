@@ -72,20 +72,19 @@ class LoginView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        username = serializer.validated_data['username']
+        email = serializer.validated_data['email']
         password = serializer.validated_data['password']
-        user = authenticate(username=username, password=password)
+        
+        from django.contrib.auth.models import User
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            user = None
 
-        if user is None:
+        if user is None or not user.check_password(password):
             return Response(
                 {"detail": "Invalid credentials. Please try again."},
                 status=status.HTTP_401_UNAUTHORIZED,
-            )
-
-        if not user.email:
-            return Response(
-                {"detail": "No email address associated with this account. Cannot send OTP."},
-                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Invalidate any previous unused OTPs for this user
