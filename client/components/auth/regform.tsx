@@ -1,17 +1,29 @@
 "use client";
 
 import { useForm } from "react-hook-form";
+import { useState } from "react";
 import GoogleAuth from "./GoogleAuth";
+import OTPInput from "./OTPInput";
 import { navigate } from "@/lib/navigation";
+import { authService } from "@/services/authService";
 
 type RegisterFormData = {
     email: string;
-    uname: string;
+    username: string;
     password: string;
-    confirmPassword: string;
+    password2: string;
 };
 
 export default function RegisterForm() {
+    const [showOTP, setShowOTP] = useState(false);
+    const [userEmail, setUserEmail] = useState("");
+    const [sessionToken, setSessionToken] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [otpError, setOtpError] = useState("");
+    const [isVerified, setIsVerified] = useState(false);
+    const [showToast, setShowToast] = useState(false);
+    const [verifiedData, setVerifiedData] = useState<any>(null);
+
     const {
         register,
         handleSubmit,
@@ -21,9 +33,87 @@ export default function RegisterForm() {
 
     const password = watch("password");
 
-    const onSubmit = (data: RegisterFormData) => {
-        console.log(data);
+    const onSubmit = async (data: RegisterFormData) => {
+        try {
+            setIsLoading(true);
+            setOtpError("");
+            const response = await authService.register(data);
+
+            // After successful registration request, show OTP input
+            if (response.data.session_token) {
+                setSessionToken(response.data.session_token);
+            }
+            setUserEmail(data.email);
+            setShowOTP(true);
+        } catch (error: any) {
+            setOtpError(error.response?.data?.message || "Registration failed. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
     };
+
+    const handleOTPComplete = async (otp: string) => {
+        try {
+            setIsLoading(true);
+            setOtpError("");
+
+            const response = await authService.verifyOTP({
+                email: userEmail,
+                otp: otp,
+                session_token: sessionToken,
+            });
+
+            if (response.data.access) {
+                // Store verified data but don't redirect yet
+                setVerifiedData(response.data);
+                setIsVerified(true);
+                setShowToast(true);
+                // Hide toast after 5 seconds
+                setTimeout(() => setShowToast(false), 5000);
+            }
+        } catch (error: any) {
+            setOtpError(error.response?.data?.message || "Invalid OTP. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleContinue = () => {
+        if (verifiedData) {
+            localStorage.setItem("token", verifiedData.access);
+            localStorage.setItem("refresh", verifiedData.refresh);
+            if (verifiedData.user) {
+                localStorage.setItem("user", JSON.stringify(verifiedData.user));
+            }
+            navigate("/", true);
+        }
+    };
+
+    const handleCancelOTP = () => {
+        setShowOTP(false);
+        setUserEmail("");
+        setSessionToken("");
+        setOtpError("");
+        setIsVerified(false);
+        setShowToast(false);
+        setVerifiedData(null);
+    };
+
+    // Show OTP input if OTP stage is active
+    if (showOTP) {
+        return (
+            <OTPInput
+                length={6}
+                onComplete={handleOTPComplete}
+                onCancel={handleCancelOTP}
+                onContinue={handleContinue}
+                isLoading={isLoading}
+                error={otpError}
+                isVerified={isVerified}
+                showToast={showToast}
+            />
+        );
+    }
 
     return (
         <div className="w-full max-w-md h-full flex flex-col justify-center">
@@ -70,7 +160,7 @@ export default function RegisterForm() {
                     <input
                         id="uname"
                         type="text"
-                        {...register("uname", {
+                        {...register("username", {
                             required: "Username is required",
                             minLength: {
                                 value: 3,
@@ -84,8 +174,8 @@ export default function RegisterForm() {
                         className="w-full px-4 py-3 bg-[#1E293B] border border-[#7C3AED]/30 rounded-xl text-[#F1F5F9] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent transition-all"
                         placeholder="Enter your username"
                     />
-                    {errors.uname && (
-                        <p className="mt-2 text-sm text-red-400">{errors.uname.message}</p>
+                    {errors.username && (
+                        <p className="mt-2 text-sm text-red-400">{errors.username.message}</p>
                     )}
                 </div>
 
@@ -103,8 +193,8 @@ export default function RegisterForm() {
                         {...register("password", {
                             required: "Password is required",
                             minLength: {
-                                value: 6,
-                                message: "Password must be at least 6 characters",
+                                value: 8,
+                                message: "Password must be at least 8 characters",
                             },
                         })}
                         className="w-full px-4 py-3 bg-[#1E293B] border border-[#7C3AED]/30 rounded-xl text-[#F1F5F9] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent transition-all"
@@ -120,15 +210,15 @@ export default function RegisterForm() {
                 {/* Confirm Password Field */}
                 <div>
                     <label
-                        htmlFor="confirmPassword"
+                        htmlFor="password2"
                         className="block text-sm font-medium text-[#F1F5F9] mb-2"
                     >
                         Confirm Password
                     </label>
                     <input
-                        id="confirmPassword"
+                        id="password2"
                         type="password"
-                        {...register("confirmPassword", {
+                        {...register("password2", {
                             required: "Please confirm your password",
                             validate: (value) =>
                                 value === password || "Passwords do not match",
@@ -136,9 +226,9 @@ export default function RegisterForm() {
                         className="w-full px-4 py-3 bg-[#1E293B] border border-[#7C3AED]/30 rounded-xl text-[#F1F5F9] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent transition-all"
                         placeholder="Confirm your password"
                     />
-                    {errors.confirmPassword && (
+                    {errors.password2 && (
                         <p className="mt-2 text-sm text-red-400">
-                            {errors.confirmPassword.message}
+                            {errors.password2.message}
                         </p>
                     )}
                 </div>
@@ -146,9 +236,10 @@ export default function RegisterForm() {
                 {/* Submit Button */}
                 <button
                     type="submit"
-                    className="w-full py-3 px-4 bg-linear-to-r from-[#5B21B6] to-[#7C3AED] text-white font-semibold rounded-xl shadow-lg shadow-[#7C3AED]/30 hover:shadow-[#7C3AED]/50 hover:scale-[1.02] transition-all focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/50 cursor-pointer"
+                    disabled={isLoading}
+                    className="w-full py-3 px-4 bg-linear-to-r from-[#5B21B6] to-[#7C3AED] text-white font-semibold rounded-xl shadow-lg shadow-[#7C3AED]/30 hover:shadow-[#7C3AED]/50 hover:scale-[1.02] transition-all focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer"
                 >
-                    Create Account
+                    {isLoading ? "Creating Account..." : "Create Account"}
                 </button>
             </form>
 
