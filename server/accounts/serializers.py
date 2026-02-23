@@ -33,3 +33,8 @@ class RegisterSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
+
+
+class VerifyOTPSerializer(serializers.Serializer):
+    session_token = serializers.UUIDField()
+    otp = serializers.CharField(min_length=6, max_length=6)
