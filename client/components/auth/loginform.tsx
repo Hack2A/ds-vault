@@ -15,8 +15,12 @@ type LoginFormData = {
 export default function LoginForm() {
     const [showOTP, setShowOTP] = useState(false);
     const [userEmail, setUserEmail] = useState("");
+    const [sessionToken, setSessionToken] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [otpError, setOtpError] = useState("");
+    const [isVerified, setIsVerified] = useState(false);
+    const [showToast, setShowToast] = useState(false);
+    const [verifiedData, setVerifiedData] = useState<any>(null);
 
     const {
         register,
@@ -31,6 +35,9 @@ export default function LoginForm() {
             const response = await authService.login(data);
 
             // After successful login request, show OTP input
+            if (response.data.session_token) {
+                setSessionToken(response.data.session_token);
+            }
             setUserEmail(data.email);
             setShowOTP(true);
         } catch (error: any) {
@@ -48,11 +55,16 @@ export default function LoginForm() {
             const response = await authService.verifyOTP({
                 email: userEmail,
                 otp: otp,
+                session_token: sessionToken,
             });
 
-            if (response.data.tokens) {
-                localStorage.setItem("token", response.data.tokens.access);
-                navigate("/dashboard", true);
+            if (response.data.access) {
+                // Store verified data but don't redirect yet
+                setVerifiedData(response.data);
+                setIsVerified(true);
+                setShowToast(true);
+                // Hide toast after 5 seconds
+                setTimeout(() => setShowToast(false), 5000);
             }
         } catch (error: any) {
             setOtpError(error.response?.data?.message || "Invalid OTP. Please try again.");
@@ -61,10 +73,25 @@ export default function LoginForm() {
         }
     };
 
+    const handleContinue = () => {
+        if (verifiedData) {
+            localStorage.setItem("token", verifiedData.access);
+            localStorage.setItem("refresh", verifiedData.refresh);
+            if (verifiedData.user) {
+                localStorage.setItem("user", JSON.stringify(verifiedData.user));
+            }
+            navigate("/", true);
+        }
+    };
+
     const handleCancelOTP = () => {
         setShowOTP(false);
         setUserEmail("");
+        setSessionToken("");
         setOtpError("");
+        setIsVerified(false);
+        setShowToast(false);
+        setVerifiedData(null);
     };
 
     // Show OTP input if OTP stage is active
@@ -74,8 +101,11 @@ export default function LoginForm() {
                 length={6}
                 onComplete={handleOTPComplete}
                 onCancel={handleCancelOTP}
+                onContinue={handleContinue}
                 isLoading={isLoading}
                 error={otpError}
+                isVerified={isVerified}
+                showToast={showToast}
             />
         );
     }
@@ -145,9 +175,10 @@ export default function LoginForm() {
                 {/* Submit Button */}
                 <button
                     type="submit"
-                    className="w-full py-3 px-4 bg-linear-to-r from-[#5B21B6] to-[#7C3AED] text-white font-semibold rounded-xl shadow-lg shadow-[#7C3AED]/30 hover:shadow-[#7C3AED]/50 hover:scale-[1.02] transition-all focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/50 cursor-pointer"
+                    disabled={isLoading}
+                    className="w-full py-3 px-4 bg-linear-to-r from-[#5B21B6] to-[#7C3AED] text-white font-semibold rounded-xl shadow-lg shadow-[#7C3AED]/30 hover:shadow-[#7C3AED]/50 hover:scale-[1.02] transition-all focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer"
                 >
-                    Sign In
+                    {isLoading ? "Signing In..." : "Sign In"}
                 </button>
             </form>
 

@@ -23,7 +23,11 @@ export const authService = {
 		return apiClient.post("/auth/register/", userData);
 	},
 
-	verifyOTP: async (otpData: { email: string; otp: string }) => {
+	verifyOTP: async (otpData: {
+		email: string;
+		otp: string;
+		session_token: string;
+	}) => {
 		return apiClient.post("/auth/verify-otp/", otpData);
 	},
 
