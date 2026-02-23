@@ -1,17 +1,25 @@
 "use client";
 
 import { useForm } from "react-hook-form";
+import { useState } from "react";
 import GoogleAuth from "./GoogleAuth";
+import OTPInput from "./OTPInput";
 import { navigate } from "@/lib/navigation";
+import { authService } from "@/services/authService";
 
 type RegisterFormData = {
     email: string;
-    uname: string;
+    username: string;
     password: string;
-    confirmPassword: string;
+    password2: string;
 };
 
 export default function RegisterForm() {
+    const [showOTP, setShowOTP] = useState(false);
+    const [userEmail, setUserEmail] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [otpError, setOtpError] = useState("");
+
     const {
         register,
         handleSubmit,
@@ -21,9 +29,61 @@ export default function RegisterForm() {
 
     const password = watch("password");
 
-    const onSubmit = (data: RegisterFormData) => {
-        console.log(data);
+    const onSubmit = async (data: RegisterFormData) => {
+        try {
+            setIsLoading(true);
+            setOtpError("");
+            const response = await authService.register(data);
+
+            // After successful registration request, show OTP input
+            setUserEmail(data.email);
+            setShowOTP(true);
+        } catch (error: any) {
+            setOtpError(error.response?.data?.message || "Registration failed. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
     };
+
+    const handleOTPComplete = async (otp: string) => {
+        try {
+            setIsLoading(true);
+            setOtpError("");
+
+            const response = await authService.verifyOTP({
+                email: userEmail,
+                otp: otp,
+            });
+
+            if (response.data.tokens) {
+                localStorage.setItem("token", response.data.tokens.access);
+                navigate("/dashboard", true);
+            }
+        } catch (error: any) {
+            setOtpError(error.response?.data?.message || "Invalid OTP. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleCancelOTP = () => {
+        setShowOTP(false);
+        setUserEmail("");
+        setOtpError("");
+    };
+
+    // Show OTP input if OTP stage is active
+    if (showOTP) {
+        return (
+            <OTPInput
+                length={6}
+                onComplete={handleOTPComplete}
+                onCancel={handleCancelOTP}
+                isLoading={isLoading}
+                error={otpError}
+            />
+        );
+    }
 
     return (
         <div className="w-full max-w-md h-full flex flex-col justify-center">
@@ -70,7 +130,7 @@ export default function RegisterForm() {
                     <input
                         id="uname"
                         type="text"
-                        {...register("uname", {
+                        {...register("username", {
                             required: "Username is required",
                             minLength: {
                                 value: 3,
@@ -84,8 +144,8 @@ export default function RegisterForm() {
                         className="w-full px-4 py-3 bg-[#1E293B] border border-[#7C3AED]/30 rounded-xl text-[#F1F5F9] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent transition-all"
                         placeholder="Enter your username"
                     />
-                    {errors.uname && (
-                        <p className="mt-2 text-sm text-red-400">{errors.uname.message}</p>
+                    {errors.username && (
+                        <p className="mt-2 text-sm text-red-400">{errors.username.message}</p>
                     )}
                 </div>
 
@@ -103,8 +163,8 @@ export default function RegisterForm() {
                         {...register("password", {
                             required: "Password is required",
                             minLength: {
-                                value: 6,
-                                message: "Password must be at least 6 characters",
+                                value: 8,
+                                message: "Password must be at least 8 characters",
                             },
                         })}
                         className="w-full px-4 py-3 bg-[#1E293B] border border-[#7C3AED]/30 rounded-xl text-[#F1F5F9] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent transition-all"
@@ -120,15 +180,15 @@ export default function RegisterForm() {
                 {/* Confirm Password Field */}
                 <div>
                     <label
-                        htmlFor="confirmPassword"
+                        htmlFor="password2"
                         className="block text-sm font-medium text-[#F1F5F9] mb-2"
                     >
                         Confirm Password
                     </label>
                     <input
-                        id="confirmPassword"
+                        id="password2"
                         type="password"
-                        {...register("confirmPassword", {
+                        {...register("password2", {
                             required: "Please confirm your password",
                             validate: (value) =>
                                 value === password || "Passwords do not match",
@@ -136,9 +196,9 @@ export default function RegisterForm() {
                         className="w-full px-4 py-3 bg-[#1E293B] border border-[#7C3AED]/30 rounded-xl text-[#F1F5F9] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent transition-all"
                         placeholder="Confirm your password"
                     />
-                    {errors.confirmPassword && (
+                    {errors.password2 && (
                         <p className="mt-2 text-sm text-red-400">
-                            {errors.confirmPassword.message}
+                            {errors.password2.message}
                         </p>
                     )}
                 </div>

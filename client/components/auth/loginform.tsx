@@ -3,7 +3,9 @@
 import { navigate } from "@/lib/navigation";
 import { authService } from "@/services/authService";
 import { useForm } from "react-hook-form";
+import { useState } from "react";
 import GoogleAuth from "./GoogleAuth";
+import OTPInput from "./OTPInput";
 
 type LoginFormData = {
     email: string;
@@ -11,20 +13,72 @@ type LoginFormData = {
 };
 
 export default function LoginForm() {
+    const [showOTP, setShowOTP] = useState(false);
+    const [userEmail, setUserEmail] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [otpError, setOtpError] = useState("");
+
     const {
         register,
         handleSubmit,
         formState: { errors },
     } = useForm<LoginFormData>();
 
-    const onSubmit = (data: LoginFormData) => {
-        authService.login(data).then((response) => {
+    const onSubmit = async (data: LoginFormData) => {
+        try {
+            setIsLoading(true);
+            setOtpError("");
+            const response = await authService.login(data);
+
+            // After successful login request, show OTP input
+            setUserEmail(data.email);
+            setShowOTP(true);
+        } catch (error: any) {
+            setOtpError(error.response?.data?.message || "Login failed. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleOTPComplete = async (otp: string) => {
+        try {
+            setIsLoading(true);
+            setOtpError("");
+
+            const response = await authService.verifyOTP({
+                email: userEmail,
+                otp: otp,
+            });
+
             if (response.data.tokens) {
                 localStorage.setItem("token", response.data.tokens.access);
                 navigate("/dashboard", true);
             }
-        });
+        } catch (error: any) {
+            setOtpError(error.response?.data?.message || "Invalid OTP. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
     };
+
+    const handleCancelOTP = () => {
+        setShowOTP(false);
+        setUserEmail("");
+        setOtpError("");
+    };
+
+    // Show OTP input if OTP stage is active
+    if (showOTP) {
+        return (
+            <OTPInput
+                length={6}
+                onComplete={handleOTPComplete}
+                onCancel={handleCancelOTP}
+                isLoading={isLoading}
+                error={otpError}
+            />
+        );
+    }
 
     return (
         <div className="w-full max-w-md">
@@ -74,8 +128,8 @@ export default function LoginForm() {
                         {...register("password", {
                             required: "Password is required",
                             minLength: {
-                                value: 6,
-                                message: "Password must be at least 6 characters",
+                                value: 8,
+                                message: "Password must be at least 8 characters",
                             },
                         })}
                         className="w-full px-4 py-3 bg-[#1E293B] border border-[#7C3AED]/30 rounded-xl text-[#F1F5F9] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent transition-all"

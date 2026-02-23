@@ -23,6 +23,10 @@ export const authService = {
 		return apiClient.post("/auth/register/", userData);
 	},
 
+	verifyOTP: async (otpData: { email: string; otp: string }) => {
+		return apiClient.post("/auth/verify-otp/", otpData);
+	},
+
 	logout: async () => {
 		localStorage.removeItem("token");
 		return apiClient.post("/auth/logout/");
