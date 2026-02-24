@@ -4,6 +4,7 @@ import { navigate } from "@/lib/navigation";
 import { authService } from "@/services/authService";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import GoogleAuth from "./GoogleAuth";
 import OTPInput from "./OTPInput";
 
@@ -13,6 +14,9 @@ type LoginFormData = {
 };
 
 export default function LoginForm() {
+    const searchParams = useSearchParams();
+    const redirect = searchParams.get('redirect') || '/home';
+
     const [showOTP, setShowOTP] = useState(false);
     const [userEmail, setUserEmail] = useState("");
     const [sessionToken, setSessionToken] = useState("");
@@ -75,12 +79,8 @@ export default function LoginForm() {
 
     const handleContinue = () => {
         if (verifiedData) {
-            localStorage.setItem("token", verifiedData.access);
-            localStorage.setItem("refresh", verifiedData.refresh);
-            if (verifiedData.user) {
-                localStorage.setItem("user", JSON.stringify(verifiedData.user));
-            }
-            navigate("/", true);
+            // Set token as cookie for authentication
+            navigate(redirect, true);
         }
     };
 
