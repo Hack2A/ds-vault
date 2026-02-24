@@ -1,4 +1,11 @@
 import random
+import sys
+import os
+
+# Add the project root to sys.path so the Encryption module can be imported
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from Encryption.seed_phrase import SeedPhrase, SeedPhraseAuth
+
 from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from django.conf import settings
@@ -10,7 +17,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import OTPCode
+from .models import OTPCode, UserProfile
 from .serializers import LoginSerializer, RegisterSerializer, VerifyOTPSerializer
 
 OTP_EXPIRY_MINUTES = 10
@@ -43,6 +50,15 @@ class RegisterView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             tokens = get_tokens_for_user(user)
+
+            # Generate and hash 12-word seed phrase
+            auth = SeedPhraseAuth()
+            seed_phrase_words = auth.generate_phrase(word_count=12)
+            seed_phrase_hash = auth._phrase_to_hash(seed_phrase_words)
+
+            # Store the hashed seed phrase in the UserProfile
+            UserProfile.objects.create(user=user, seed_phrase_hash=seed_phrase_hash)
+
             return Response(
                 {
                     "message": "Account created successfully.",
@@ -51,6 +67,7 @@ class RegisterView(APIView):
                         "username": user.username,
                         "email": user.email,
                     },
+                    "seed_phrase": seed_phrase_words,
                     **tokens,
                 },
                 status=status.HTTP_201_CREATED,
