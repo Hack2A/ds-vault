@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'corsheaders',
     # Local
     'accounts',
+    'vault',
 ]
 
 MIDDLEWARE = [
