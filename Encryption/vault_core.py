@@ -47,32 +47,41 @@ class VaultCore:
             return False, f"[ERROR] File not found: {file_path}", ""
         
         file_name = os.path.basename(file_path)
-        print(f"\n[STORING] Processing file: {file_name}")
-        
         try:
             with open(file_path, 'rb') as f:
                 file_data = f.read()
-            
-            file_size_mb = len(file_data) / (1024 * 1024)
-            print(f"  Size: {file_size_mb:.2f} MB")
+            return self.store_data(file_name, file_data, password)
+        except Exception as e:
+            return False, f"[ERROR] Failed to read file: {e}", ""
+
+    def store_text(self, text_name: str, text_content: str, password: str) -> tuple:
+        file_data = text_content.encode('utf-8')
+        return self.store_data(text_name, file_data, password, is_text=True)
+
+    def store_data(self, item_name: str, data_bytes: bytes, password: str, is_text: bool = False) -> tuple:
+        print(f"\n[STORING] Processing item: {item_name}")
+        
+        try:
+            size_mb = len(data_bytes) / (1024 * 1024)
+            print(f"  Size: {size_mb:.2f} MB")
             print(f"  [ENCRYPTING] Using AES-GCM password-based encryption...")
             
-            original_hash = FileEncryption.compute_file_hash(file_data)
+            original_hash = FileEncryption.compute_file_hash(data_bytes)
 
             salt = os.urandom(16)
             key = KeyDerivation.derive_master_key(password, salt)
-            encrypted_data, nonce = AESGCMEncryption.encrypt_data(file_data, key)
+            encrypted_data, nonce = AESGCMEncryption.encrypt_data(data_bytes, key)
             
-            encrypted_file_path = os.path.join(self.files_dir, f"{file_name}.enc")
+            encrypted_file_path = os.path.join(self.files_dir, f"{item_name}.enc")
             with open(encrypted_file_path, 'wb') as f:
                 f.write(encrypted_data)
             
-            print(f"  [OK] AES-GCM Encrypted file stored")
+            print(f"  [OK] AES-GCM Encrypted data stored")
             print(f"  [BLOCKCHAIN] Recording on blockchain...")
 
             block_data = {
                 "type": "file_record",
-                "file_name": file_name,
+                "file_name": item_name,
                 "original_hash": original_hash,
                 "salt": salt.hex(),
                 "nonce": nonce.hex(),
@@ -84,22 +93,23 @@ class VaultCore:
             print(f"  [OK] Nonce={block.nonce}  |  Hash={block.hash[:24]}...")
             print(f"  [OK] Recorded on blockchain at Block #{block.index}")
             
-            self.metadata[file_name] = {
+            self.metadata[item_name] = {
                 "original_hash": original_hash,
                 "salt": salt.hex(),
                 "nonce": nonce.hex(),
-                "file_size": len(file_data),
+                "file_size": len(data_bytes),
                 "encrypted_size": len(encrypted_data),
                 "stored_at": datetime.now().isoformat(),
                 "block_number": block.index,
+                "is_text": is_text
             }
             
             self._save_metadata()
-            print(f"  [OK] File stored securely by {self.username}")
-            return True, "[OK] File stored securely", original_hash
+            print(f"  [OK] Item stored securely by {self.username}")
+            return True, "[OK] Item stored securely", original_hash
             
         except Exception as e:
-            return False, f"[ERROR] Failed to store file: {e}", ""
+            return False, f"[ERROR] Failed to store item: {e}", ""
 
     def retrieve_file(self, file_name: str, password: str, output_path: str = None) -> tuple:
         print(f"\n[RETRIEVING] File: {file_name}")
@@ -148,15 +158,11 @@ class VaultCore:
             
             print(f"  [OK] Integrity verified - no tampering detected")
             
-            if output_path:
-                with open(output_path, 'wb') as f:
-                    f.write(decrypted_data)
-                print(f"  [OK] File saved to: {output_path}")
-            
-            return True, f"[OK] File retrieved successfully", decrypted_data
+            is_text = meta.get("is_text", False)
+            return True, f"[OK] Item retrieved successfully", decrypted_data, is_text
             
         except Exception as e:
-            return False, f"[ERROR] Failed to retrieve: {e}", b""
+            return False, f"[ERROR] Failed to retrieve: {e}", b"", False
 
     def verify_file_integrity(self, file_name: str) -> tuple:
         if file_name not in self.metadata:

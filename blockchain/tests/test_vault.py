@@ -88,7 +88,7 @@ class VaultTestSuite:
             output_path = os.path.join(self.test_dir, f"retrieved_{alice_file}")
             
             print(f"\n  Retrieving Alice's file: {alice_file}")
-            success, msg, data = alice_vault.retrieve_file(alice_file, password, output_path)
+            success, msg, data, is_text = alice_vault.retrieve_file(alice_file, password, output_path)
             assert success
             print(f"  [OK] File retrieved and decrypted")
 
