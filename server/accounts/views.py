@@ -1,6 +1,8 @@
 import random
 import sys
 import os
+import uuid
+from django.core.cache import cache
 
 # Add the project root to sys.path so the Encryption module can be imported
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -41,36 +43,54 @@ class RegisterView(APIView):
     """
     POST api/auth/register/
     Body: { username, email, password, password2 }
-    Returns: 201 with tokens on success, 400 on validation error.
+    Returns: 201 with session_token on success, 400 on validation error.
     """
     permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
-            tokens = get_tokens_for_user(user)
+            email = serializer.validated_data.get('email', '')
+            username = serializer.validated_data['username']
+            password = serializer.validated_data['password']
 
-            # Generate and hash 12-word seed phrase
-            auth = SeedPhraseAuth()
-            seed_phrase_words = auth.generate_phrase(word_count=12)
-            seed_phrase_hash = auth._phrase_to_hash(seed_phrase_words)
+            session_token = str(uuid.uuid4())
+            code = generate_otp()
 
-            # Store the hashed seed phrase in the UserProfile
-            UserProfile.objects.create(user=user, seed_phrase_hash=seed_phrase_hash)
+            # Save in cache for OTP_EXPIRY_MINUTES
+            cache.set(
+                session_token,
+                {
+                    'type': 'register',
+                    'username': username,
+                    'email': email,
+                    'password': password,
+                    'otp': code,
+                },
+                timeout=OTP_EXPIRY_MINUTES * 60
+            )
+
+            # Send OTP via email
+            send_mail(
+                subject="Your DS-Vault Registration OTP",
+                message=(
+                    f"Hi {username},\n\n"
+                    f"Your one-time password (OTP) for registration is: {code}\n\n"
+                    f"This OTP is valid for {OTP_EXPIRY_MINUTES} minutes.\n"
+                    f"Do not share this code with anyone.\n\n"
+                    f"— DS-Vault Team"
+                ),
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[email],
+                fail_silently=False,
+            )
 
             return Response(
                 {
-                    "message": "Account created successfully.",
-                    "user": {
-                        "id": user.id,
-                        "username": user.username,
-                        "email": user.email,
-                    },
-                    "seed_phrase": seed_phrase_words,
-                    **tokens,
+                    "message": f"OTP sent to {email}. Please verify to complete registration.",
+                    "session_token": session_token,
                 },
-                status=status.HTTP_201_CREATED,
+                status=status.HTTP_200_OK,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -148,9 +168,60 @@ class VerifyOTPView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        session_token = serializer.validated_data['session_token']
+        session_token = str(serializer.validated_data['session_token'])
         otp = serializer.validated_data['otp']
 
+        # 1. Check if token exists in cache (Registration Flow)
+        cached_data = cache.get(session_token)
+        if cached_data and cached_data.get('type') == 'register':
+            if cached_data['otp'] != otp:
+                return Response(
+                    {"detail": "Invalid OTP. Please try again."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # OTP is correct, create the user
+            from django.contrib.auth.models import User
+            try:
+                user = User.objects.create_user(
+                    username=cached_data['username'],
+                    email=cached_data['email'],
+                    password=cached_data['password']
+                )
+            except Exception as e:
+                return Response(
+                    {"detail": "Error creating account. The username or email may have been taken."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Generate and hash 12-word seed phrase
+            auth = SeedPhraseAuth()
+            seed_phrase_words = auth.generate_phrase(word_count=12)
+            seed_phrase_hash = auth._phrase_to_hash(seed_phrase_words)
+
+            # Store the hashed seed phrase in the UserProfile
+            UserProfile.objects.create(user=user, seed_phrase_hash=seed_phrase_hash)
+
+            # Clear cache
+            cache.delete(session_token)
+            
+            tokens = get_tokens_for_user(user)
+
+            return Response(
+                {
+                    "message": "Account created successfully. SAVE YOUR SEED PHRASE OUTSIDE THIS APP.",
+                    "user": {
+                        "id": user.id,
+                        "username": user.username,
+                        "email": user.email,
+                    },
+                    "seed_phrase": seed_phrase_words,
+                    **tokens,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        # 2. Check if token exists in DB (Login Flow)
         try:
             otp_obj = OTPCode.objects.get(session_token=session_token)
         except OTPCode.DoesNotExist:
@@ -192,7 +263,7 @@ class VerifyOTPView(APIView):
 
         return Response(
             {
-                "message": "Login successful.",
+                "message": "OTP verified successfully.",
                 "user": {
                     "id": user.id,
                     "username": user.username,
