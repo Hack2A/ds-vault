@@ -67,8 +67,8 @@ export default function Home() {
     const advancedVaultItems = vaultItems.filter(item => item.isAdvanced);
 
     return (
-        <div className="min-h-screen w-[90%] p-6">
-            <div className="mx-auto space-y-8">
+        <div className="min-h-screen w-[90%] p-6 flex items-center justify-center">
+            <div className="mx-auto space-y-8 min-w-[90%]">
                 {/* Header */}
                 <div className="text-center space-y-2">
                     <h1 className="text-4xl font-bold text-[#F1F5F9]">
