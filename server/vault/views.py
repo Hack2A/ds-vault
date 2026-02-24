@@ -140,3 +140,50 @@ class StoreItemView(APIView):
                 },
                 status=status.HTTP_201_CREATED,
             )
+
+
+class ListVaultItemsView(APIView):
+    """
+    GET /api/vault/items/
+    Returns all vault items (normal + advanced) for the authenticated user.
+    Requires: Authorization: Bearer <access_token>
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        normal_items = NormalVaultItem.objects.filter(user=user).values(
+            'id', 'name', 'ciphertext', 'created_at'
+        )
+        advanced_items = AdvancedVaultItem.objects.filter(user=user).values(
+            'id', 'name', 'ciphertext', 'block_hash', 'created_at'
+        )
+
+        return Response(
+            {
+                "normal": [
+                    {
+                        "id": item["id"],
+                        "name": item["name"],
+                        "ciphertext": item["ciphertext"],
+                        "is_advanced": False,
+                        "created_at": item["created_at"],
+                    }
+                    for item in normal_items
+                ],
+                "advanced": [
+                    {
+                        "id": item["id"],
+                        "name": item["name"],
+                        "ciphertext": item["ciphertext"],
+                        "block_hash": item["block_hash"],
+                        "is_advanced": True,
+                        "created_at": item["created_at"],
+                    }
+                    for item in advanced_items
+                ],
+                "total_count": normal_items.count() + advanced_items.count(),
+            },
+            status=status.HTTP_200_OK,
+        )
