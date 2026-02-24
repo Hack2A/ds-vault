@@ -30,9 +30,9 @@ class SecureVaultApp:
         print("=" * 60)
         if self.current_user:
             print(f"  Logged in: {self.current_user}\n")
-            print("  1. Store file     2. Retrieve file   3. List files")
-            print("  4. Verify integrity                  5. Vault status")
-            print("  6. Logout         0. Exit")
+            print("  1. Store file     2. Store text      3. Retrieve")
+            print("  4. List items     5. Verify integrity")
+            print("  6. Vault status   7. Logout          0. Exit")
         else:
             print("\n  1. Register       2. Login           3. List users")
             print("  0. Exit")
@@ -87,6 +87,33 @@ class SecureVaultApp:
         success, msg, _ = self.vault.store_file(file_path, password)
         print(f"\n  {msg}")
 
+    def store_text(self):
+        if not self.current_user:
+            print("  [ERROR] Not logged in")
+            return
+            
+        text_name = input("  Text item name (e.g. 'secret_note'): ").strip()
+        if not text_name:
+            print("  [ERROR] Name cannot be empty")
+            return
+            
+        print("  Enter your confidential text (Type ':wq' on a new line and press Enter to save):")
+        lines = []
+        while True:
+            line = input("  > ")
+            if line.strip() == ":wq":
+                break
+            lines.append(line)
+            
+        text_content = "\n".join(lines)
+        if not text_content:
+            print("  [ERROR] Text cannot be empty")
+            return
+            
+        password = input("  Seed phrase (used as encryption key): ").strip()
+        success, msg, _ = self.vault.store_text(text_name, text_content, password)
+        print(f"\n  {msg}")
+
     def retrieve_file(self):
         if not self.current_user:
             print("  [ERROR] Not logged in")
@@ -110,10 +137,23 @@ class SecureVaultApp:
         except ValueError:
             print("  [ERROR] Invalid input")
             return
+        info = self.vault.get_file_info(file_name)
+        is_text = info.get("is_text", False)
+        
         password = input("  Seed phrase: ").strip()
-        output_path = input("  Output path (Enter to skip): ").strip() or None
-        success, msg, _ = self.vault.retrieve_file(file_name, password, output_path)
+        
+        output_path = None
+        if not is_text:
+            output_path = input("  Output path (Enter to skip): ").strip() or None
+            
+        success, msg, decrypted_data, is_text_retrieved = self.vault.retrieve_file(file_name, password, output_path)
         print(f"\n  {msg}")
+        
+        if success and is_text_retrieved:
+            print("\n  [ DECRYPTED TEXT ]:")
+            print("-" * 60)
+            print(decrypted_data.decode('utf-8'))
+            print("-" * 60)
 
     def list_files(self):
         if not self.current_user:
@@ -196,14 +236,16 @@ class SecureVaultApp:
                 if choice == "1":
                     self.store_file()
                 elif choice == "2":
-                    self.retrieve_file()
+                    self.store_text()
                 elif choice == "3":
-                    self.list_files()
+                    self.retrieve_file()
                 elif choice == "4":
-                    self.verify_integrity()
+                    self.list_files()
                 elif choice == "5":
-                    self.view_vault_status()
+                    self.verify_integrity()
                 elif choice == "6":
+                    self.view_vault_status()
+                elif choice == "7":
                     self.logout_user()
                 elif choice == "0":
                     print("\n  Goodbye!")
