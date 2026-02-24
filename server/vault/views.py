@@ -16,7 +16,7 @@ from rest_framework.views import APIView
 
 from accounts.models import UserProfile
 from .models import NormalVaultItem, AdvancedVaultItem
-from .serializers import StoreItemSerializer
+from .serializers import StoreItemSerializer, DecryptItemSerializer
 
 # Module-level VaultAPI instance (stateless, cache-backed)
 _vault_api = VaultAPI()
@@ -184,6 +184,132 @@ class ListVaultItemsView(APIView):
                     for item in advanced_items
                 ],
                 "total_count": normal_items.count() + advanced_items.count(),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class DecryptItemView(APIView):
+    """
+    POST /api/vault/decrypt/
+    Body: { id, is_adv, seed_phrase? }
+    Requires: Authorization: Bearer <access_token>
+
+    Decrypts directly from VaultCore metadata (persisted to disk) — avoids relying
+    on the in-memory blockchain which resets on every server restart.
+
+    Normal mode  (is_adv=false): raw AES key is in metadata → decrypt directly.
+    Advanced mode (is_adv=true): verifies seed phrase, re-derives Argon2 key from
+                                  persisted salt + nonce in metadata → decrypt.
+    Returns: { item_name, plaintext, is_advanced }
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from Encryption.encryption import AESGCMEncryption
+        from Encryption.key_derivation import KeyDerivation
+
+        serializer = DecryptItemSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+        item_id = serializer.validated_data['id']
+        is_adv = serializer.validated_data['is_adv']
+        seed_phrase = serializer.validated_data.get('seed_phrase', '').strip()
+
+        # --- 1. Fetch vault item from the correct DB table ---
+        if is_adv:
+            try:
+                vault_item = AdvancedVaultItem.objects.get(id=item_id, user=user)
+            except AdvancedVaultItem.DoesNotExist:
+                return Response(
+                    {"detail": "Advanced vault item not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # Verify seed phrase against stored hash before doing anything
+            try:
+                profile = user.profile
+            except UserProfile.DoesNotExist:
+                return Response(
+                    {"detail": "User profile not found."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+            provided_hash = _hash_seed_phrase(seed_phrase)
+            if provided_hash != profile.seed_phrase_hash:
+                return Response(
+                    {"detail": "Incorrect seed phrase. Decryption denied."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+        else:
+            try:
+                vault_item = NormalVaultItem.objects.get(id=item_id, user=user)
+            except NormalVaultItem.DoesNotExist:
+                return Response(
+                    {"detail": "Normal vault item not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+        # --- 2. Auto-provision VaultCore user if needed ---
+        if user.username not in _vault_api.user_manager.list_users():
+            _vault_api.user_manager.register_user(user.username)
+
+        # --- 3. Load VaultCore (which reads _vault_metadata.json from disk) ---
+        core = _vault_api._get_core(user.username)
+        if core is None:
+            return Response(
+                {"detail": "Vault core not found for user."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        meta = core.metadata.get(vault_item.name)
+        if meta is None:
+            return Response(
+                {"detail": f"Item '{vault_item.name}' not found in vault metadata."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # --- 4. Decrypt directly from metadata (no blockchain lookup needed) ---
+        try:
+            encrypted_data = bytes.fromhex(vault_item.ciphertext)
+            nonce = bytes.fromhex(meta["nonce"])
+
+            if is_adv:
+                # Re-derive key from seed phrase + stored salt
+                salt = bytes.fromhex(meta["salt"])
+                key = KeyDerivation.derive_master_key(seed_phrase, salt)
+            else:
+                # Raw key is stored in metadata (normal mode)
+                key = bytes.fromhex(meta["raw_key"])
+
+            valid, plaintext_bytes = AESGCMEncryption.decrypt_data(encrypted_data, key, nonce)
+        except Exception as e:
+            return Response(
+                {"detail": f"Decryption error: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not valid:
+            return Response(
+                {"detail": "Decryption failed. Wrong seed phrase or corrupted data."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            plaintext = plaintext_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            return Response(
+                {"detail": "Decrypted data is not valid UTF-8 text."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "item_name": vault_item.name,
+                "plaintext": plaintext,
+                "is_advanced": is_adv,
             },
             status=status.HTTP_200_OK,
         )
