@@ -1,6 +1,6 @@
 import hashlib
 import secrets
-from src.wordlist import WORDLIST
+from Encryption.wordlist import WORDLIST
 
 
 class SeedPhrase:

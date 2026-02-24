@@ -1,9 +1,17 @@
 import json
 import os
+import sys
 import hashlib
 from datetime import datetime
-from src.blockchain import Blockchain
-from src.encryption import FileEncryption
+
+# Ensure ds-vault root is on the path so both packages resolve
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
+from blockchain.blockchain import Blockchain
+from Encryption.encryption import FileEncryption, AESGCMEncryption
+from Encryption.key_derivation import KeyDerivation
 
 
 class VaultCore:
@@ -47,36 +55,45 @@ class VaultCore:
             
             file_size_mb = len(file_data) / (1024 * 1024)
             print(f"  Size: {file_size_mb:.2f} MB")
-            print(f"  [ENCRYPTING] Using password-based encryption...")
+            print(f"  [ENCRYPTING] Using AES-GCM password-based encryption...")
             
             original_hash = FileEncryption.compute_file_hash(file_data)
-            encrypted_data, salt, hmac_tag = FileEncryption.encrypt_file(file_data, password)
+            
+            # Using V2-style secure encryption
+            # In V2, salt is 16 bytes. Let's create salt and derive key
+            salt = os.urandom(16)
+            key = KeyDerivation.derive_master_key(password, salt)
+            
+            # Encrypt data using AES-GCM
+            encrypted_data, nonce = AESGCMEncryption.encrypt_data(file_data, key)
             
             encrypted_file_path = os.path.join(self.files_dir, f"{file_name}.enc")
             with open(encrypted_file_path, 'wb') as f:
                 f.write(encrypted_data)
             
-            print(f"  [OK] Encrypted file stored")
+            print(f"  [OK] AES-GCM Encrypted file stored")
             print(f"  [BLOCKCHAIN] Recording on blockchain...")
             
+            # Prepare block data for Blockchain (V1-style integrity)
             block_data = {
                 "type": "file_record",
                 "file_name": file_name,
                 "original_hash": original_hash,
                 "salt": salt.hex(),
-                "hmac_tag": hmac_tag.hex(),
+                "nonce": nonce.hex(),
                 "timestamp": datetime.now().isoformat(),
             }
             
             block = self.blockchain.add_block(block_data)
             print(f"  [MINING] Mining Block #{block.index} (difficulty={self.blockchain.difficulty})...")
-            print(f"  [OK] Nonce={block.nonce}  |  Time=0.0047s  |  Hash={block.hash[:24]}...")
+            print(f"  [OK] Nonce={block.nonce}  |  Hash={block.hash[:24]}...")
             print(f"  [OK] Recorded on blockchain at Block #{block.index}")
             
+            # Save metadata
             self.metadata[file_name] = {
                 "original_hash": original_hash,
                 "salt": salt.hex(),
-                "hmac_tag": hmac_tag.hex(),
+                "nonce": nonce.hex(),
                 "file_size": len(file_data),
                 "encrypted_size": len(encrypted_data),
                 "stored_at": datetime.now().isoformat(),
@@ -84,8 +101,8 @@ class VaultCore:
             }
             
             self._save_metadata()
-            print(f"  [OK] File stored by {self.username}")
-            return True, "[OK] File stored successfully", original_hash
+            print(f"  [OK] File stored securely by {self.username}")
+            return True, "[OK] File stored securely", original_hash
             
         except Exception as e:
             return False, f"[ERROR] Failed to store file: {e}", ""
@@ -117,15 +134,17 @@ class VaultCore:
             with open(encrypted_file_path, 'rb') as f:
                 encrypted_data = f.read()
             
-            print(f"  [DECRYPTING] Using password...")
+            print(f"  [DECRYPTING] Using AES-GCM...")
             
             salt = bytes.fromhex(meta["salt"])
-            hmac_tag = bytes.fromhex(meta["hmac_tag"])
+            nonce = bytes.fromhex(meta["nonce"])
             
-            valid, decrypted_data = FileEncryption.decrypt_file(encrypted_data, password, salt, hmac_tag)
+            # V2-style decryption
+            key = KeyDerivation.derive_master_key(password, salt)
+            valid, decrypted_data = AESGCMEncryption.decrypt_data(encrypted_data, key, nonce)
             
             if not valid:
-                return False, f"[ERROR] Decryption failed - wrong password", b""
+                return False, f"[ERROR] Decryption failed - wrong password or corrupted data", b""
             
             print(f"  [OK] Decryption successful")
             print(f"  [VERIFYING] Checking integrity...")

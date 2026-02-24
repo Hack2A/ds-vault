@@ -2,8 +2,8 @@ import json
 import os
 import uuid
 from datetime import datetime
-from src.encryption import AESGCMEncryption
-from src.crypto_constants import UUID_LENGTH
+from Encryption.encryption import AESGCMEncryption
+from Encryption.crypto_constants import UUID_LENGTH
 
 
 class EncryptedMetadata:

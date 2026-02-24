@@ -3,7 +3,7 @@ import secrets
 from argon2.low_level import hash_secret, Type
 from hkdf import hkdf_expand, hkdf_extract
 from hashlib import sha256
-from src.crypto_constants import (
+from Encryption.crypto_constants import (
     ARGON2_TIME_COST, ARGON2_MEMORY_COST, ARGON2_PARALLELISM,
     ARGON2_SALT_LENGTH, ARGON2_KEY_LENGTH,
     HKDF_INFO_ENCRYPTION, HKDF_INFO_METADATA, HKDF_INFO_SIGNING

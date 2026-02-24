@@ -3,10 +3,12 @@ import sys
 import tempfile
 import shutil
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.user_manager import UserManager
-from src.vault_core import VaultCore
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, _ROOT)
+
+from Encryption.user_manager import UserManager
+from Encryption.vault_core import VaultCore
 
 
 class VaultTestSuite:

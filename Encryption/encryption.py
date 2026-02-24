@@ -5,7 +5,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from hashlib import sha256
-from src.crypto_constants import AES_KEY_LENGTH, AES_NONCE_LENGTH
+from Encryption.crypto_constants import AES_KEY_LENGTH, AES_NONCE_LENGTH
 
 
 class AESGCMEncryption:

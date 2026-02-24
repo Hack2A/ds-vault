@@ -60,17 +60,17 @@ class TamperingDetection:
     
     @staticmethod
     def check_vault_integrity(merkle_root: bytes, signature: bytes, public_key) -> bool:
-        from src.signing import DigitalSignature
+        from blockchain.signing import DigitalSignature
         return DigitalSignature.verify_signature(merkle_root, signature, public_key)
     
     @staticmethod
     def create_integrity_check(merkle_root: bytes, private_key) -> bytes:
-        from src.signing import DigitalSignature
+        from blockchain.signing import DigitalSignature
         return DigitalSignature.sign_data(merkle_root, private_key)
     
     @staticmethod
     def verify_file_tampering(original_hash: bytes, current_hash: bytes) -> bool:
-        from src.encryption import ConstantTimeComparison
+        from Encryption.encryption import ConstantTimeComparison
         return ConstantTimeComparison.compare_bytes(original_hash, current_hash)
 
 

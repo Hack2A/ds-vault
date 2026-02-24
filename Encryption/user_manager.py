@@ -1,7 +1,7 @@
 import json
 import os
-from src.seed_phrase import SeedPhraseAuth
-from src.encryption import FileEncryption
+from Encryption.seed_phrase import SeedPhraseAuth
+from Encryption.encryption import FileEncryption
 
 
 class UserManager:
