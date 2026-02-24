@@ -1,0 +1,353 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>{{ action_type|title }} Verification - Cryptrael Vault</title>
+	</head>
+
+	<body
+		style="
+			margin: 0;
+			padding: 0;
+			background: linear-gradient(
+				135deg,
+				#0f172a 0%,
+				#1e293b 50%,
+				#0f172a 100%
+			);
+			font-family:
+				-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Arial,
+				sans-serif;
+			-webkit-font-smoothing: antialiased;
+		"
+	>
+		<table
+			width="100%"
+			cellpadding="0"
+			cellspacing="0"
+			style="padding: 40px 20px"
+		>
+			<tr>
+				<td align="center">
+					<!-- Main Container -->
+					<table
+						width="600"
+						cellpadding="0"
+						cellspacing="0"
+						style="
+							background: linear-gradient(
+								135deg,
+								#1e293b 0%,
+								#0f172a 100%
+							);
+							border-radius: 16px;
+							box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+							overflow: hidden;
+							border: 1px solid rgba(124, 58, 237, 0.2);
+						"
+					>
+						<!-- Header with Brand -->
+						<tr>
+							<td
+								align="center"
+								style="
+									background: linear-gradient(
+										135deg,
+										#5b21b6 0%,
+										#7c3aed 100%
+									);
+									padding: 32px 40px;
+								"
+							>
+								<table
+									width="100%"
+									cellpadding="0"
+									cellspacing="0"
+								>
+									<tr>
+										<td align="center">
+											<h1
+												style="
+													color: #f1f5f9;
+													margin: 0 0 8px 0;
+													font-size: 32px;
+													font-weight: 700;
+													letter-spacing: -0.5px;
+												"
+											>
+												🔐 Cryptrael Vault
+											</h1>
+											<p
+												style="
+													color: #e9d5ff;
+													margin: 0;
+													font-size: 14px;
+													font-weight: 500;
+													letter-spacing: 0.5px;
+												"
+											>
+												🔒 Enterprise-Grade Security •
+												Blockchain-Powered
+											</p>
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+
+						<!-- Content Section -->
+						<tr>
+							<td style="padding: 40px">
+								<table
+									width="100%"
+									cellpadding="0"
+									cellspacing="0"
+								>
+									<!-- Welcome Message -->
+									<tr>
+										<td>
+											<h2
+												style="
+													color: #f1f5f9;
+													margin: 0 0 16px 0;
+													font-size: 24px;
+													font-weight: 600;
+												"
+											>
+												{% if action_type == 'login' %}Welcome Back, {{ username }}!{% else %}Welcome to Cryptrael Vault, {{ username }}!{% endif %}
+											</h2>
+											<p
+												style="
+													color: #94a3b8;
+													margin: 0 0 24px 0;
+													font-size: 15px;
+													line-height: 1.6;
+												"
+											>
+												{% if action_type == 'login' %}We received a request to log in to your account. Use the verification code below to complete your secure login.{% else %}You're one step away from securing your data with military-grade encryption. Use the verification code below to complete your registration.{% endif %}
+											</p>
+										</td>
+									</tr>
+
+									<!-- OTP Box -->
+									<tr>
+										<td
+											align="center"
+											style="padding: 24px 0"
+										>
+											<table
+												cellpadding="0"
+												cellspacing="0"
+												style="
+													background: linear-gradient(
+														135deg,
+														#7c3aed 0%,
+														#5b21b6 100%
+													);
+													border-radius: 12px;
+													padding: 3px;
+													box-shadow: 0 8px 24px
+														rgba(124, 58, 237, 0.4);
+												"
+											>
+												<tr>
+													<td
+														style="
+															background: #0f172a;
+															border-radius: 10px;
+															padding: 24px 48px;
+														"
+													>
+														<p
+															style="
+																color: #94a3b8;
+																margin: 0 0 8px
+																	0;
+																font-size: 12px;
+																text-align: center;
+																text-transform: uppercase;
+																letter-spacing: 1px;
+															"
+														>
+															Your Verification
+															Code
+														</p>
+														<div
+															style="
+																color: #7c3aed;
+																font-size: 36px;
+																font-weight: 700;
+																letter-spacing: 8px;
+																text-align: center;
+																margin: 0;
+																font-family:
+																	&quot;Courier New&quot;,
+																	monospace;
+															"
+														>
+															{{ otp }}
+														</div>
+													</td>
+												</tr>
+											</table>
+										</td>
+									</tr>
+
+									<!-- Expiry Warning -->
+									<tr>
+										<td
+											style="
+												background: rgba(
+													239,
+													68,
+													68,
+													0.1
+												);
+												border-left: 3px solid #ef4444;
+												border-radius: 8px;
+												padding: 16px;
+												margin: 16px 0;
+											"
+										>
+											<p
+												style="
+													color: #fca5a5;
+													margin: 0;
+													font-size: 14px;
+													line-height: 1.5;
+												"
+											>
+												⏱️
+												<strong>Time Sensitive:</strong>
+												This code expires in
+												<strong
+													>{{ expiry }}
+													minutes</strong
+												>. Don't share it with anyone.
+											</p>
+										</td>
+									</tr>
+
+									<!-- Security Tips -->
+									<tr>
+										<td style="padding-top: 24px">
+											<p
+												style="
+													color: #64748b;
+													margin: 0 0 12px 0;
+													font-size: 13px;
+													font-weight: 600;
+												"
+											>
+												🛡️ Security Reminder:
+											</p>
+											<ul
+												style="
+													color: #64748b;
+													margin: 0;
+													padding-left: 20px;
+													font-size: 13px;
+													line-height: 1.8;
+												"
+											>
+												<li>
+													Cryptrael Vault will never ask for
+													your password via email
+												</li>
+												<li>
+													Never share your OTP or seed
+													phrase with anyone
+												</li>
+												<li>
+													If you didn't request this
+													code, please secure your
+													account immediately
+												</li>
+											</ul>
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+
+						<!-- Footer -->
+						<tr>
+							<td
+								style="
+									background: rgba(124, 58, 237, 0.05);
+									border-top: 1px solid
+										rgba(124, 58, 237, 0.2);
+									padding: 24px 40px;
+								"
+							>
+								<table
+									width="100%"
+									cellpadding="0"
+									cellspacing="0"
+								>
+									<tr>
+										<td align="center">
+											<p
+												style="
+													color: #64748b;
+													margin: 0 0 8px 0;
+													font-size: 12px;
+													line-height: 1.6;
+												"
+											>
+												Secured by
+												<strong style="color: #7c3aed"
+													>AES-256 Encryption</strong
+												>
+												+
+												<strong style="color: #10b981"
+													>Blockchain
+													Verification</strong
+												>
+											</p>
+											<p
+												style="
+													color: #475569;
+													margin: 0;
+													font-size: 11px;
+												"
+											>
+												© 2026 Cryptrael Vault Security System.
+												All rights reserved.
+											</p>
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+					</table>
+
+					<!-- Footer Notice -->
+					<table
+						width="600"
+						cellpadding="0"
+						cellspacing="0"
+						style="margin-top: 20px"
+					>
+						<tr>
+							<td align="center">
+								<p
+									style="
+										color: #475569;
+										margin: 0;
+										font-size: 11px;
+										line-height: 1.6;
+									"
+								>
+									This is an automated message. Please do not
+									reply to this email.
+								</p>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>
