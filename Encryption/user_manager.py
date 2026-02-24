@@ -78,3 +78,12 @@ class UserManager:
             if total_size is not None:
                 self.users_db[username]["total_size"] = total_size
             self._save_users()
+
+    def verify_seed_phrase(self, username: str, seed_phrase: str) -> bool:
+        """Verify a space-separated seed phrase string against the stored hash."""
+        if username not in self.users_db:
+            return False
+        import hashlib
+        phrase_hash = hashlib.sha256(seed_phrase.strip().lower().encode("utf-8")).hexdigest()
+        return phrase_hash == self.users_db[username]["seed_hash"]
+
