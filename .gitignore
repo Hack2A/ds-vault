@@ -1,0 +1,33 @@
+# Agent / AI config — never commit to repo
+.agent/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Vault data — never commit user data or encrypted files
+vault_users/
+*.enc
+_vault_metadata.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
