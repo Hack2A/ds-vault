@@ -14,15 +14,16 @@ type VaultItemData = {
 type ViewVaultModalProps = {
     isOpen: boolean;
     item: VaultItemData | null;
+    isLoading?: boolean;
     onClose: () => void;
+    onUnlock?: (seed: string) => void;
 };
 
 type SecurityPhraseForm = {
     securityWords: string;
 };
 
-export default function ViewVaultModal({ isOpen, item, onClose }: ViewVaultModalProps) {
-    const [isUnlocked, setIsUnlocked] = useState(false);
+export default function ViewVaultModal({ isOpen, item, isLoading, onClose, onUnlock }: ViewVaultModalProps) {
     const [unlockError, setUnlockError] = useState("");
 
     const {
@@ -33,7 +34,6 @@ export default function ViewVaultModal({ isOpen, item, onClose }: ViewVaultModal
     } = useForm<SecurityPhraseForm>();
 
     const handleClose = () => {
-        setIsUnlocked(false);
         setUnlockError("");
         reset();
         onClose();
@@ -45,15 +45,34 @@ export default function ViewVaultModal({ isOpen, item, onClose }: ViewVaultModal
             setUnlockError("Please enter exactly 12 words");
             return;
         }
-        // In a real app, verify the phrase against stored hash
-        setIsUnlocked(true);
+        // Call the onUnlock callback with the seed phrase
+        if (onUnlock) {
+            onUnlock(data.securityWords);
+        }
         setUnlockError("");
         reset();
     };
 
     if (!isOpen || !item) return null;
 
-    const needsUnlock = item.isAdvanced && !isUnlocked;
+    // Show unlock form if it's an advanced item without content
+    const needsUnlock = item.isAdvanced && !item.content;
+
+    if (isLoading) {
+        return (
+            <>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" />
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="bg-[#1E293B] border border-[#7C3AED]/30 rounded-2xl shadow-2xl p-8">
+                        <div className="text-center">
+                            <div className="w-12 h-12 border-4 border-[#7C3AED] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                            <p className="text-[#94A3B8]">Fetching item details...</p>
+                        </div>
+                    </div>
+                </div>
+            </>
+        );
+    }
 
     return (
         <>
