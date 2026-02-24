@@ -75,6 +75,13 @@ class SecureVaultApp:
         else:
             print(f"  {msg}")
 
+    def _pick_mode(self) -> str:
+        print("\n  Select storage mode:")
+        print("    1. Normal   — AES-GCM encryption only")
+        print("    2. Advanced — AES-GCM encryption + Blockchain integrity record")
+        choice = input("  Mode (1/2, default=2): ").strip()
+        return "normal" if choice == "1" else "advanced"
+
     def store_file(self):
         if not self.current_user:
             print("  [ERROR] Not logged in")
@@ -83,8 +90,12 @@ class SecureVaultApp:
         if not os.path.exists(file_path):
             print("  [ERROR] File not found")
             return
-        password = input("  Seed phrase (used as encryption key): ").strip()
-        success, msg, _ = self.vault.store_file(file_path, password)
+        mode = self._pick_mode()
+        if mode == "normal":
+            password = ""
+        else:
+            password = input("  Seed phrase (used as encryption key): ").strip()
+        success, msg, _ = self.vault.store_file(file_path, password, mode=mode)
         print(f"\n  {msg}")
 
     def store_text(self):
@@ -110,8 +121,12 @@ class SecureVaultApp:
             print("  [ERROR] Text cannot be empty")
             return
             
-        password = input("  Seed phrase (used as encryption key): ").strip()
-        success, msg, _ = self.vault.store_text(text_name, text_content, password)
+        mode = self._pick_mode()
+        if mode == "normal":
+            password = ""
+        else:
+            password = input("  Seed phrase (used as encryption key): ").strip()
+        success, msg, _ = self.vault.store_text(text_name, text_content, password, mode=mode)
         print(f"\n  {msg}")
 
     def retrieve_file(self):
@@ -139,8 +154,12 @@ class SecureVaultApp:
             return
         info = self.vault.get_file_info(file_name)
         is_text = info.get("is_text", False)
+        mode = info.get("mode", "advanced")
         
-        password = input("  Seed phrase: ").strip()
+        if mode == "normal":
+            password = ""  # key is stored in metadata, no credential needed
+        else:
+            password = input("  Seed phrase: ").strip()
         
         output_path = None
         if not is_text:

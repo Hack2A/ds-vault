@@ -42,7 +42,7 @@ class VaultCore:
         except Exception:
             pass
 
-    def store_file(self, file_path: str, password: str) -> tuple:
+    def store_file(self, file_path: str, password: str, mode: str = "advanced") -> tuple:
         if not os.path.exists(file_path):
             return False, f"[ERROR] File not found: {file_path}", ""
         
@@ -50,26 +50,36 @@ class VaultCore:
         try:
             with open(file_path, 'rb') as f:
                 file_data = f.read()
-            return self.store_data(file_name, file_data, password)
+            return self.store_data(file_name, file_data, password, mode=mode)
         except Exception as e:
             return False, f"[ERROR] Failed to read file: {e}", ""
 
-    def store_text(self, text_name: str, text_content: str, password: str) -> tuple:
+    def store_text(self, text_name: str, text_content: str, password: str, mode: str = "advanced") -> tuple:
         file_data = text_content.encode('utf-8')
-        return self.store_data(text_name, file_data, password, is_text=True)
+        return self.store_data(text_name, file_data, password, is_text=True, mode=mode)
 
-    def store_data(self, item_name: str, data_bytes: bytes, password: str, is_text: bool = False) -> tuple:
+    def store_data(self, item_name: str, data_bytes: bytes, password: str = "", is_text: bool = False, mode: str = "advanced") -> tuple:
         print(f"\n[STORING] Processing item: {item_name}")
+        print(f"  Mode: {'Advanced (AES-GCM + Blockchain)' if mode == 'advanced' else 'Normal (AES-GCM, auto-key)'}")
         
         try:
             size_mb = len(data_bytes) / (1024 * 1024)
             print(f"  Size: {size_mb:.2f} MB")
-            print(f"  [ENCRYPTING] Using AES-GCM password-based encryption...")
+            print(f"  [ENCRYPTING] Using AES-GCM encryption...")
             
             original_hash = FileEncryption.compute_file_hash(data_bytes)
 
-            salt = os.urandom(16)
-            key = KeyDerivation.derive_master_key(password, salt)
+            if mode == "normal":
+                # Passwordless: generate a random key and store it in metadata
+                key = os.urandom(32)
+                raw_key_hex = key.hex()
+                salt_hex = None
+            else:
+                salt = os.urandom(16)
+                key = KeyDerivation.derive_master_key(password, salt)
+                raw_key_hex = None
+                salt_hex = salt.hex()
+
             encrypted_data, nonce = AESGCMEncryption.encrypt_data(data_bytes, key)
             
             encrypted_file_path = os.path.join(self.files_dir, f"{item_name}.enc")
@@ -77,31 +87,35 @@ class VaultCore:
                 f.write(encrypted_data)
             
             print(f"  [OK] AES-GCM Encrypted data stored")
-            print(f"  [BLOCKCHAIN] Recording on blockchain...")
 
-            block_data = {
-                "type": "file_record",
-                "file_name": item_name,
-                "original_hash": original_hash,
-                "salt": salt.hex(),
-                "nonce": nonce.hex(),
-                "timestamp": datetime.now().isoformat(),
-            }
-            
-            block = self.blockchain.add_block(block_data)
-            print(f"  [MINING] Mining Block #{block.index} (difficulty={self.blockchain.difficulty})...")
-            print(f"  [OK] Nonce={block.nonce}  |  Hash={block.hash[:24]}...")
-            print(f"  [OK] Recorded on blockchain at Block #{block.index}")
+            block_number = None
+            if mode == "advanced":
+                print(f"  [BLOCKCHAIN] Recording on blockchain...")
+                block_data = {
+                    "type": "file_record",
+                    "file_name": item_name,
+                    "original_hash": original_hash,
+                    "salt": salt_hex,
+                    "nonce": nonce.hex(),
+                    "timestamp": datetime.now().isoformat(),
+                }
+                block = self.blockchain.add_block(block_data)
+                print(f"  [MINING] Mining Block #{block.index} (difficulty={self.blockchain.difficulty})...")
+                print(f"  [OK] Nonce={block.nonce}  |  Hash={block.hash[:24]}...")
+                print(f"  [OK] Recorded on blockchain at Block #{block.index}")
+                block_number = block.index
             
             self.metadata[item_name] = {
                 "original_hash": original_hash,
-                "salt": salt.hex(),
+                "salt": salt_hex,
                 "nonce": nonce.hex(),
+                "raw_key": raw_key_hex,
                 "file_size": len(data_bytes),
                 "encrypted_size": len(encrypted_data),
                 "stored_at": datetime.now().isoformat(),
-                "block_number": block.index,
-                "is_text": is_text
+                "block_number": block_number,
+                "is_text": is_text,
+                "mode": mode,
             }
             
             self._save_metadata()
@@ -111,50 +125,55 @@ class VaultCore:
         except Exception as e:
             return False, f"[ERROR] Failed to store item: {e}", ""
 
-    def retrieve_file(self, file_name: str, password: str, output_path: str = None) -> tuple:
-        print(f"\n[RETRIEVING] File: {file_name}")
+    def retrieve_file(self, file_name: str, password: str = "", output_path: str = None) -> tuple:
+        print(f"\n[RETRIEVING] {file_name}")
         
         if file_name not in self.metadata:
-            return False, f"[ERROR] File not found in metadata", b""
+            return False, f"[ERROR] File not found in metadata", b"", False
         
         meta = self.metadata[file_name]
-        print(f"  [BLOCKCHAIN] Verifying on blockchain...")
-        
-        found = False
-        for block in self.blockchain.chain:
-            if isinstance(block.data, dict) and block.data.get("file_name") == file_name:
-                found = True
-                print(f"  [OK] Blockchain record found at Block #{block.index}")
-                break
-        
-        if not found:
-            return False, f"[ERROR] File not found on blockchain", b""
+        mode = meta.get("mode", "advanced")
+
+        if mode == "advanced":
+            print(f"  [BLOCKCHAIN] Verifying on blockchain...")
+            found = any(
+                isinstance(b.data, dict) and b.data.get("file_name") == file_name
+                for b in self.blockchain.chain
+            )
+            if not found:
+                return False, f"[ERROR] File not found on blockchain", b"", False
+            print(f"  [OK] Blockchain record verified")
         
         encrypted_file_path = os.path.join(self.files_dir, f"{file_name}.enc")
         if not os.path.exists(encrypted_file_path):
-            return False, f"[ERROR] Encrypted file not found", b""
+            return False, f"[ERROR] Encrypted file not found", b"", False
         
         try:
             with open(encrypted_file_path, 'rb') as f:
                 encrypted_data = f.read()
             
             print(f"  [DECRYPTING] Using AES-GCM...")
-            
-            salt = bytes.fromhex(meta["salt"])
+
+            mode = meta.get("mode", "advanced")
             nonce = bytes.fromhex(meta["nonce"])
 
-            key = KeyDerivation.derive_master_key(password, salt)
+            if mode == "normal":
+                key = bytes.fromhex(meta["raw_key"])
+            else:
+                salt = bytes.fromhex(meta["salt"])
+                key = KeyDerivation.derive_master_key(password, salt)
+
             valid, decrypted_data = AESGCMEncryption.decrypt_data(encrypted_data, key, nonce)
             
             if not valid:
-                return False, f"[ERROR] Decryption failed - wrong password or corrupted data", b""
+                return False, f"[ERROR] Decryption failed - wrong password or corrupted data", b"", False
             
             print(f"  [OK] Decryption successful")
             print(f"  [VERIFYING] Checking integrity...")
             
             current_hash = FileEncryption.compute_file_hash(decrypted_data)
             if current_hash != meta["original_hash"]:
-                return False, f"[ERROR] Hash mismatch - file tampered", decrypted_data
+                return False, f"[ERROR] Hash mismatch - file tampered", decrypted_data, False
             
             print(f"  [OK] Integrity verified - no tampering detected")
             
@@ -172,16 +191,28 @@ class VaultCore:
         
         block_num = meta.get("block_number")
         original_hash = meta["original_hash"]
+        mode = meta.get("mode", "advanced")
         
-        print(f"  [OK] File '{file_name}' verified on blockchain")
+        print(f"  [OK] Item '{file_name}' verified")
+        print(f"   Mode : {mode.upper()}")
         print(f"   Hash : {original_hash[:32]}...")
         print(f"   Size : {meta['file_size']} bytes")
-        print(f"   Block: #{block_num}")
+        if mode == "advanced":
+            print(f"   Block: #{block_num}")
+        else:
+            print(f"   Block: N/A (Normal mode — no blockchain record)")
         
-        return True, f"[OK] File integrity verified"
+        return True, f"[OK] Item integrity verified"
 
     def list_files(self) -> list:
         return list(self.metadata.keys())
+
+    def find_block_by_hash(self, block_hash: str):
+        """Return the Block whose hash matches, or None."""
+        for block in self.blockchain.chain:
+            if block.hash == block_hash:
+                return block
+        return None
 
     def get_file_info(self, file_name: str) -> dict:
         if file_name in self.metadata:
@@ -205,7 +236,10 @@ class VaultCore:
             print(f"  {'-' * 56}")
             for i, (fname, meta) in enumerate(self.metadata.items(), 1):
                 size_kb = meta.get("file_size", 0) / 1024
-                block = meta.get("block_number", "?")
-                print(f"    {i}. {fname:<32} ({size_kb:>7.2f} KB) Block: #{block}")
+                block = meta.get("block_number")
+                mode = meta.get("mode", "advanced")
+                kind = "[TEXT]" if meta.get("is_text") else "[FILE]"
+                block_str = f"Block #{block}" if block is not None else "No Block"
+                print(f"    {i}. {kind} {fname:<28} ({size_kb:>7.2f} KB)  {mode:<8}  {block_str}")
         
         print(f"\n" + "=" * 60 + "\n")
