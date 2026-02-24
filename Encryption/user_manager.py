@@ -1,7 +1,7 @@
 import json
 import os
+from datetime import datetime
 from Encryption.seed_phrase import SeedPhraseAuth
-from Encryption.encryption import FileEncryption
 
 
 class UserManager:
@@ -38,7 +38,7 @@ class UserManager:
             "vault_dir": os.path.join(self.users_dir, username),
             "files_count": 0,
             "total_size": 0,
-            "created_at": str(__import__('datetime').datetime.now())
+            "created_at": str(datetime.now())
         }
         
         vault_dir = self.users_db[username]["vault_dir"]

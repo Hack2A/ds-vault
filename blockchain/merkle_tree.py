@@ -1,6 +1,4 @@
-import json
 from hashlib import sha256
-import uuid as uuid_module
 
 
 class MerkleNode:

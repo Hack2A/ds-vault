@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sys
 import tempfile
 import shutil
@@ -9,6 +9,8 @@ sys.path.insert(0, _ROOT)
 
 from Encryption.user_manager import UserManager
 from Encryption.vault_core import VaultCore
+
+TEST_PASSWORD = "v@ult-t3st-k3y-2025"  # test-only credential, never used in production
 
 
 class VaultTestSuite:
@@ -55,7 +57,7 @@ class VaultTestSuite:
         test_text_path = self.create_test_file("test_document.txt", "This is a confidential document.\nIt should be encrypted and stored on the blockchain.")
         test_data_path = self.create_test_file("test_data.txt", "Important data: " + "X" * 1000)
         
-        password = "test_password_123"
+        password = TEST_PASSWORD
         
         print("\n  Alice storing file...")
         success, msg, file_hash = alice_vault.store_file(test_text_path, password)
@@ -78,7 +80,7 @@ class VaultTestSuite:
         print("\n[TEST 3] File Retrieval and Decryption")
         print("-" * 70)
         
-        password = "test_password_123"
+        password = TEST_PASSWORD
         alice_files = alice_vault.list_files()
         
         if alice_files:
@@ -119,7 +121,7 @@ class VaultTestSuite:
         print("\n[TEST 6] Multiple File Storage")
         print("-" * 70)
         
-        password = "test_password_123"
+        password = TEST_PASSWORD
         files_to_store = [
             ("document1.txt", "Content 1\n" * 10),
             ("document2.txt", "Content 2\n" * 10),
@@ -172,3 +174,4 @@ if __name__ == "__main__":
     suite = VaultTestSuite()
     success = suite.run_all_tests()
     sys.exit(0 if success else 1)
+

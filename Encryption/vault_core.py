@@ -58,13 +58,9 @@ class VaultCore:
             print(f"  [ENCRYPTING] Using AES-GCM password-based encryption...")
             
             original_hash = FileEncryption.compute_file_hash(file_data)
-            
-            # Using V2-style secure encryption
-            # In V2, salt is 16 bytes. Let's create salt and derive key
+
             salt = os.urandom(16)
             key = KeyDerivation.derive_master_key(password, salt)
-            
-            # Encrypt data using AES-GCM
             encrypted_data, nonce = AESGCMEncryption.encrypt_data(file_data, key)
             
             encrypted_file_path = os.path.join(self.files_dir, f"{file_name}.enc")
@@ -73,8 +69,7 @@ class VaultCore:
             
             print(f"  [OK] AES-GCM Encrypted file stored")
             print(f"  [BLOCKCHAIN] Recording on blockchain...")
-            
-            # Prepare block data for Blockchain (V1-style integrity)
+
             block_data = {
                 "type": "file_record",
                 "file_name": file_name,
@@ -89,7 +84,6 @@ class VaultCore:
             print(f"  [OK] Nonce={block.nonce}  |  Hash={block.hash[:24]}...")
             print(f"  [OK] Recorded on blockchain at Block #{block.index}")
             
-            # Save metadata
             self.metadata[file_name] = {
                 "original_hash": original_hash,
                 "salt": salt.hex(),
@@ -138,8 +132,7 @@ class VaultCore:
             
             salt = bytes.fromhex(meta["salt"])
             nonce = bytes.fromhex(meta["nonce"])
-            
-            # V2-style decryption
+
             key = KeyDerivation.derive_master_key(password, salt)
             valid, decrypted_data = AESGCMEncryption.decrypt_data(encrypted_data, key, nonce)
             
