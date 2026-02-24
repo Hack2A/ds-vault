@@ -10,9 +10,16 @@ export interface StoreItemRequest {
 
 // Interface for get item request
 export interface GetItemRequest {
-	itemID: string;
+	id: string;
 	is_adv: boolean;
 	seed_phrase?: string; // Optional, required only when advanced is true
+}
+
+// Interface for get item response
+export interface GetItemResponse {
+	item_name: string;
+	plaintext: string;
+	is_advanced: boolean;
 }
 
 // Interface for vault item
@@ -50,14 +57,15 @@ export const itemService = {
 	},
 
 	// Get a specific item
-	getItem: async (params: GetItemRequest) => {
+	getItem: async (params: GetItemRequest): Promise<GetItemResponse> => {
 		// Validate that seed is provided when advanced is true
 		if (params.is_adv && !params.seed_phrase) {
 			throw new Error("Seed is required when advanced mode is enabled");
 		}
 
-		// For GET requests, pass params as query parameters
-		return apiClient.get("/vault/get-item/", { params });
+		// Send data in request body for POST request
+		const response = await apiClient.post<GetItemResponse>("/vault/decrypt/", params);
+		return response.data;
 	},
 };
 

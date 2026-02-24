@@ -50,10 +50,24 @@ export default function VaultList({ refreshTrigger }: VaultListProps) {
     };
 
     const handleViewItem = async (item: VaultItemType, seed?: string) => {
+        // If it's an advanced item and no seed is provided, just open the modal to ask for seed
+        if (item.is_advanced && !seed) {
+            const placeholderItem: VaultItemData = {
+                id: item.id.toString(),
+                name: item.name,
+                content: "", // Empty content, will be filled after unlock
+                isAdvanced: true,
+            };
+            setSelectedItem(placeholderItem);
+            setIsViewModalOpen(true);
+            return;
+        }
+
+        // Fetch the actual item content
         try {
             setIsLoadingItem(true);
             const params = {
-                itemID: item.id.toString(),
+                id: item.id.toString(),
                 is_adv: item.is_advanced,
                 ...(item.is_advanced && seed ? { seed_phrase: seed } : {}),
             };
@@ -63,9 +77,9 @@ export default function VaultList({ refreshTrigger }: VaultListProps) {
             // Map the response to VaultItemData format
             const fullItem: VaultItemData = {
                 id: item.id.toString(),
-                name: item.name,
-                content: response.data.item_val || response.data.content || "",
-                isAdvanced: item.is_advanced,
+                name: response.item_name,
+                content: response.plaintext,
+                isAdvanced: response.is_advanced,
             };
 
             setSelectedItem(fullItem);

@@ -24,7 +24,6 @@ type SecurityPhraseForm = {
 };
 
 export default function ViewVaultModal({ isOpen, item, isLoading, onClose, onUnlock }: ViewVaultModalProps) {
-    const [isUnlocked, setIsUnlocked] = useState(false);
     const [unlockError, setUnlockError] = useState("");
 
     const {
@@ -35,7 +34,6 @@ export default function ViewVaultModal({ isOpen, item, isLoading, onClose, onUnl
     } = useForm<SecurityPhraseForm>();
 
     const handleClose = () => {
-        setIsUnlocked(false);
         setUnlockError("");
         reset();
         onClose();
@@ -57,7 +55,8 @@ export default function ViewVaultModal({ isOpen, item, isLoading, onClose, onUnl
 
     if (!isOpen || !item) return null;
 
-    const needsUnlock = item.isAdvanced && !isUnlocked;
+    // Show unlock form if it's an advanced item without content
+    const needsUnlock = item.isAdvanced && !item.content;
 
     if (isLoading) {
         return (
