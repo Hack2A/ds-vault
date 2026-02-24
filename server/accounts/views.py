@@ -14,7 +14,7 @@ from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -270,6 +270,27 @@ class VerifyOTPView(APIView):
                     "email": user.email,
                 },
                 **tokens,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ProfileView(APIView):
+    """
+    GET api/auth/profile/
+    Returns the authenticated user's profile info.
+    Requires: Authorization: Bearer <access_token>
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response(
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "date_joined": user.date_joined,
             },
             status=status.HTTP_200_OK,
         )
