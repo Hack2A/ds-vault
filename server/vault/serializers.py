@@ -13,3 +13,16 @@ class StoreItemSerializer(serializers.Serializer):
                 {"seed_phrase": "seed_phrase is required for advanced mode."}
             )
         return attrs
+
+
+class DecryptItemSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    is_adv = serializers.BooleanField(default=False)
+    seed_phrase = serializers.CharField(required=False, allow_blank=True, default='')
+
+    def validate(self, attrs):
+        if attrs.get('is_adv') and not attrs.get('seed_phrase', '').strip():
+            raise serializers.ValidationError(
+                {"seed_phrase": "seed_phrase is required for advanced mode decryption."}
+            )
+        return attrs
