@@ -10,6 +10,7 @@ from Encryption.seed_phrase import SeedPhrase, SeedPhraseAuth
 
 from django.contrib.auth import authenticate
 from django.core.mail import send_mail
+from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
@@ -71,18 +72,26 @@ class RegisterView(APIView):
             )
 
             # Send OTP via email
+            html_message = render_to_string('email/otp_email.html', {
+                'username': username,
+                'otp': code,
+                'expiry': OTP_EXPIRY_MINUTES,
+                'action_type': 'register',
+            })
+            
             send_mail(
-                subject="Your DS-Vault Registration OTP",
+                subject="🔐 Cryptrael Vault Registration - Verify Your Account",
                 message=(
                     f"Hi {username},\n\n"
                     f"Your one-time password (OTP) for registration is: {code}\n\n"
                     f"This OTP is valid for {OTP_EXPIRY_MINUTES} minutes.\n"
                     f"Do not share this code with anyone.\n\n"
-                    f"— DS-Vault Team"
+                    f"— Cryptrael Vault Team"
                 ),
                 from_email=settings.EMAIL_HOST_USER,
                 recipient_list=[email],
                 fail_silently=False,
+                html_message=html_message,
             )
 
             return Response(
@@ -132,18 +141,26 @@ class LoginView(APIView):
         otp_obj = OTPCode.objects.create(user=user, code=code)
 
         # Send OTP via email
+        html_message = render_to_string('email/otp_email.html', {
+            'username': user.username,
+            'otp': code,
+            'expiry': OTP_EXPIRY_MINUTES,
+            'action_type': 'login',
+        })
+        
         send_mail(
-            subject="Your DS-Vault Login OTP",
+            subject="🔐 Cryptrael Vault Login - Verify Your Identity",
             message=(
                 f"Hi {user.username},\n\n"
                 f"Your one-time password (OTP) is: {code}\n\n"
                 f"This OTP is valid for {OTP_EXPIRY_MINUTES} minutes.\n"
                 f"Do not share this code with anyone.\n\n"
-                f"— DS-Vault Team"
+                f"— Cryptrael Vault Team"
             ),
             from_email=settings.EMAIL_HOST_USER,
             recipient_list=[user.email],
             fail_silently=False,
+            html_message=html_message,
         )
 
         return Response(
