@@ -78,8 +78,9 @@ export default function LoginForm() {
     };
 
     const handleContinue = () => {
-        if (verifiedData) {
+        if (verifiedData && verifiedData.access) {
             // Set token as cookie for authentication
+            document.cookie = `token=${verifiedData.access}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
             navigate(redirect, true);
         }
     };
