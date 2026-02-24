@@ -7,6 +7,7 @@ import GoogleAuth from "./GoogleAuth";
 import OTPInput from "./OTPInput";
 import { navigate } from "@/lib/navigation";
 import { authService } from "@/services/authService";
+import SeedPopup from "../popup/seed";
 
 type RegisterFormData = {
     email: string;
@@ -27,6 +28,7 @@ export default function RegisterForm() {
     const [isVerified, setIsVerified] = useState(false);
     const [showToast, setShowToast] = useState(false);
     const [verifiedData, setVerifiedData] = useState<any>(null);
+    const [showSeedPopup, setShowSeedPopup] = useState(false);
 
     const {
         register,
@@ -83,8 +85,23 @@ export default function RegisterForm() {
     };
 
     const handleContinue = () => {
-        if (verifiedData) {
+        if (verifiedData && verifiedData.access) {
+            // If there's a seed phrase, show the popup first
+            if (verifiedData.seed_phrase && verifiedData.seed_phrase.length > 0) {
+                setShowSeedPopup(true);
+            } else {
+                // No seed phrase, proceed directly
+                document.cookie = `token=${verifiedData.access}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
+                navigate(redirect, true);
+            }
+        }
+    };
+
+    const handleSeedPopupClose = () => {
+        setShowSeedPopup(false);
+        if (verifiedData && verifiedData.access) {
             // Set token as cookie for authentication
+            document.cookie = `token=${verifiedData.access}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
             navigate(redirect, true);
         }
     };
@@ -102,16 +119,25 @@ export default function RegisterForm() {
     // Show OTP input if OTP stage is active
     if (showOTP) {
         return (
-            <OTPInput
-                length={6}
-                onComplete={handleOTPComplete}
-                onCancel={handleCancelOTP}
-                onContinue={handleContinue}
-                isLoading={isLoading}
-                error={otpError}
-                isVerified={isVerified}
-                showToast={showToast}
-            />
+            <>
+                <OTPInput
+                    length={6}
+                    onComplete={handleOTPComplete}
+                    onCancel={handleCancelOTP}
+                    onContinue={handleContinue}
+                    isLoading={isLoading}
+                    error={otpError}
+                    isVerified={isVerified}
+                    showToast={showToast}
+                />
+                {verifiedData?.seed_phrase && (
+                    <SeedPopup
+                        isOpen={showSeedPopup}
+                        seedPhrase={verifiedData.seed_phrase}
+                        onClose={handleSeedPopupClose}
+                    />
+                )}
+            </>
         );
     }
 

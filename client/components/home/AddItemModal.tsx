@@ -140,7 +140,7 @@ export default function AddItemModal({ isOpen, onClose, onSubmit }: AddItemModal
                                     onChange={(e) => setIsAdvancedMode(e.target.checked)}
                                     className="sr-only peer"
                                 />
-                                <div className="w-11 h-6 bg-[#475569] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#7C3AED] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#7C3AED]"></div>
+                                <div className="w-11 h-6 bg-[#475569] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#7C3AED] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#7C3AED]"></div>
                             </label>
                         </div>
 
@@ -184,7 +184,7 @@ export default function AddItemModal({ isOpen, onClose, onSubmit }: AddItemModal
                             </button>
                             <button
                                 type="submit"
-                                className="flex-1 py-3 px-4 bg-gradient-to-r from-[#5B21B6] to-[#7C3AED] text-white font-semibold rounded-xl shadow-lg shadow-[#7C3AED]/30 hover:shadow-[#7C3AED]/50 hover:scale-[1.02] transition-all focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/50"
+                                className="flex-1 py-3 px-4 bg-linear-to-r from-[#5B21B6] to-[#7C3AED] text-white font-semibold rounded-xl shadow-lg shadow-[#7C3AED]/30 hover:shadow-[#7C3AED]/50 hover:scale-[1.02] transition-all focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/50"
                             >
                                 Add Item
                             </button>
@@ -196,8 +196,8 @@ export default function AddItemModal({ isOpen, onClose, onSubmit }: AddItemModal
             {/* Confirmation Dialog */}
             {showConfirmClose && (
                 <>
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60]" />
-                    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-60" />
+                    <div className="fixed inset-0 z-70 flex items-center justify-center p-4">
                         <div className="bg-[#1E293B] border border-red-500/30 rounded-2xl shadow-2xl shadow-red-500/20 w-full max-w-md p-6">
                             <h3 className="text-xl font-bold text-[#F1F5F9] mb-3">Discard Changes?</h3>
                             <p className="text-[#94A3B8] mb-6">

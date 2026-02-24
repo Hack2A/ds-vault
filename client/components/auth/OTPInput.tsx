@@ -12,6 +12,7 @@ interface OTPInputProps {
     error?: string;
     isVerified?: boolean;
     showToast?: boolean;
+    hasSeedPhrase?: boolean;
 }
 
 export default function OTPInput({
@@ -22,7 +23,8 @@ export default function OTPInput({
     isLoading = false,
     error,
     isVerified = false,
-    showToast = false
+    showToast = false,
+    hasSeedPhrase = false
 }: OTPInputProps) {
     const [otp, setOtp] = useState<string[]>(Array(length).fill(""));
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -138,13 +140,17 @@ export default function OTPInput({
             )}
 
             <div className="space-y-3">
-                {isVerified ? (
+                {isVerified && !hasSeedPhrase ? (
                     <button
                         onClick={onContinue}
                         className="w-full py-3 px-4 bg-linear-to-r from-[#10B981] to-[#059669] text-white font-semibold rounded-xl shadow-lg shadow-[#10B981]/30 hover:shadow-[#10B981]/50 hover:scale-[1.02] transition-all focus:outline-none focus:ring-2 focus:ring-[#10B981]/50 cursor-pointer"
                     >
                         Continue
                     </button>
+                ) : isVerified && hasSeedPhrase ? (
+                    <div className="text-center py-3 text-[#94A3B8]">
+                        Please save your recovery phrase to continue
+                    </div>
                 ) : (
                     <button
                         onClick={() => onComplete(otp.join(""))}
