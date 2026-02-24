@@ -42,10 +42,9 @@ export default function ProtectedNavbar() {
                     <div className="flex items-center gap-4">
                         <Link
                             href="/profile"
-                            className="px-4 py-2.5 bg-linear-to-r from-[#5B21B6] to-[#7C3AED] text-white font-semibold rounded-xl shadow-lg shadow-[#7C3AED]/30 hover:shadow-[#7C3AED]/50 hover:scale-105 transition-all duration-300 outline-none focus:outline-none flex items-center gap-1"
+                            className="px-2.5 py-2.5 bg-linear-to-r from-[#5B21B6] to-[#7C3AED] text-white font-semibold rounded-full shadow-lg shadow-[#7C3AED]/30 hover:shadow-[#7C3AED]/50 hover:scale-105 transition-all duration-300 outline-none focus:outline-none flex items-center gap-1"
                         >
                             <CircleUserRound />
-                            Profile
                         </Link>
                     </div>
                 </div>

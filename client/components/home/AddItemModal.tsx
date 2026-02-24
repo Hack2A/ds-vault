@@ -13,13 +13,14 @@ type AddItemFormData = {
 type AddItemModalProps = {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (data: AddItemFormData & { isAdvanced: boolean }) => void;
+    onSubmit: (data: AddItemFormData & { isAdvanced: boolean }) => Promise<boolean>;
 };
 
 export default function AddItemModal({ isOpen, onClose, onSubmit }: AddItemModalProps) {
     const [isAdvancedMode, setIsAdvancedMode] = useState(false);
     const [showConfirmClose, setShowConfirmClose] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const {
         register,
@@ -50,11 +51,20 @@ export default function AddItemModal({ isOpen, onClose, onSubmit }: AddItemModal
         onClose();
     };
 
-    const handleFormSubmit = (data: AddItemFormData) => {
-        onSubmit({ ...data, isAdvanced: isAdvancedMode });
-        reset();
-        setIsAdvancedMode(false);
-        onClose();
+    const handleFormSubmit = async (data: AddItemFormData) => {
+        try {
+            setIsSubmitting(true);
+            const success = await onSubmit({ ...data, isAdvanced: isAdvancedMode });
+            if (success) {
+                reset();
+                setIsAdvancedMode(false);
+                onClose();
+            }
+        } catch (error) {
+            console.error("Error submitting form:", error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     if (!isOpen) return null;
@@ -184,9 +194,10 @@ export default function AddItemModal({ isOpen, onClose, onSubmit }: AddItemModal
                             </button>
                             <button
                                 type="submit"
-                                className="flex-1 py-3 px-4 bg-linear-to-r from-[#5B21B6] to-[#7C3AED] text-white font-semibold rounded-xl shadow-lg shadow-[#7C3AED]/30 hover:shadow-[#7C3AED]/50 hover:scale-[1.02] transition-all focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/50"
+                                disabled={isSubmitting}
+                                className="flex-1 py-3 px-4 bg-linear-to-r from-[#5B21B6] to-[#7C3AED] text-white font-semibold rounded-xl shadow-lg shadow-[#7C3AED]/30 hover:shadow-[#7C3AED]/50 hover:scale-[1.02] transition-all focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
-                                Add Item
+                                {isSubmitting ? "Adding..." : "Add Item"}
                             </button>
                         </div>
                     </form>

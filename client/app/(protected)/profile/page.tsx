@@ -1,20 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { User, Mail, Lock, Shield, LogOut } from "lucide-react";
+import { User, Mail, LogOut, Calendar } from "lucide-react";
+import { userService, UserProfileResponse } from "@/services/userService";
 
 export default function Profile() {
     const router = useRouter();
     const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+    const [userData, setUserData] = useState<UserProfileResponse | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    // Mock data - replace with actual user data from API/context
-    const userData = {
-        name: "John Doe",
-        email: "john.doe@example.com",
-        totalItems: 4,
-        advancedItems: 2,
-    };
+    // Fetch user profile on component mount
+    useEffect(() => {
+        const fetchUserProfile = async () => {
+            try {
+                setLoading(true);
+                const profileData = await userService.getUserProfile();
+                setUserData(profileData);
+                setError(null);
+            } catch (err: any) {
+                console.error("Failed to fetch user profile:", err);
+                setError(err.response?.data?.message || "Failed to load profile data");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUserProfile();
+    }, []);
 
     const handleSignOut = () => {
         // Clear the authentication cookie
@@ -23,9 +38,52 @@ export default function Profile() {
         router.push("/login");
     };
 
+    // Format date for display
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
+
+    // Loading state
+    if (loading) {
+        return (
+            <div className="min-h-screen w-full p-6 flex items-center justify-center">
+                <div className="text-center space-y-4">
+                    <div className="w-16 h-16 border-4 border-[#7C3AED] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="text-[#94A3B8] text-lg">Loading profile...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (error || !userData) {
+        return (
+            <div className="min-h-screen w-full p-6 flex items-center justify-center">
+                <div className="text-center space-y-4 max-w-md">
+                    <div className="w-16 h-16 bg-red-600/20 rounded-full flex items-center justify-center mx-auto">
+                        <User className="w-8 h-8 text-red-500" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-[#F1F5F9]">Failed to Load Profile</h2>
+                    <p className="text-[#94A3B8]">{error || "Unable to fetch profile data"}</p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="mt-4 px-6 py-3 bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-semibold rounded-xl transition-all"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="min-h-screen w-full p-6">
-            <div className="max-w-3xl mx-auto space-y-6">
+        <div className="min-h-screen w-full p-6 flex items-center justify-center">
+            <div className="min-w-lg lg:min-w-2xl mx-auto space-y-6">
                 {/* Header */}
                 <div className="text-center space-y-2 mb-8">
                     <div className="w-24 h-24 bg-linear-to-br from-[#5B21B6] to-[#7C3AED] rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-[#7C3AED]/50">
@@ -39,14 +97,14 @@ export default function Profile() {
                 <div className="bg-[#1E293B] border border-[#7C3AED]/30 rounded-2xl shadow-xl shadow-[#7C3AED]/10 overflow-hidden">
                     {/* User Details */}
                     <div className="p-6 space-y-6">
-                        {/* Name */}
+                        {/* Username */}
                         <div className="flex items-center gap-4 p-4 bg-[#0F172A] rounded-xl border border-[#7C3AED]/20">
                             <div className="w-12 h-12 bg-[#7C3AED]/20 rounded-lg flex items-center justify-center shrink-0">
                                 <User className="w-6 h-6 text-[#7C3AED]" />
                             </div>
                             <div className="flex-1">
                                 <p className="text-sm text-[#94A3B8] mb-1">Username</p>
-                                <p className="text-lg font-semibold text-[#F1F5F9]">{userData.name}</p>
+                                <p className="text-lg font-semibold text-[#F1F5F9]">{userData.username}</p>
                             </div>
                         </div>
 
@@ -60,35 +118,15 @@ export default function Profile() {
                                 <p className="text-lg font-semibold text-[#F1F5F9]">{userData.email}</p>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Divider */}
-                    <div className="border-t border-[#7C3AED]/20"></div>
-
-                    {/* Vault Statistics */}
-                    <div className="p-6">
-                        <h2 className="text-xl font-bold text-[#F1F5F9] mb-4">Vault Statistics</h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* Total Items */}
-                            <div className="p-4 bg-[#0F172A] rounded-xl border border-[#7C3AED]/20">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="w-10 h-10 bg-[#7C3AED]/20 rounded-lg flex items-center justify-center">
-                                        <Lock className="w-5 h-5 text-[#7C3AED]" />
-                                    </div>
-                                    <p className="text-sm text-[#94A3B8]">Items Secured</p>
-                                </div>
-                                <p className="text-3xl font-bold text-[#F1F5F9] ml-13">{userData.totalItems}</p>
+                        {/* Date Joined */}
+                        <div className="flex items-center gap-4 p-4 bg-[#0F172A] rounded-xl border border-[#7C3AED]/20">
+                            <div className="w-12 h-12 bg-[#7C3AED]/20 rounded-lg flex items-center justify-center shrink-0">
+                                <Calendar className="w-6 h-6 text-[#7C3AED]" />
                             </div>
-
-                            {/* Advanced Items */}
-                            <div className="p-4 bg-[#0F172A] rounded-xl border border-[#10B981]/20">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="w-10 h-10 bg-[#10B981]/20 rounded-lg flex items-center justify-center">
-                                        <Shield className="w-5 h-5 text-[#10B981]" />
-                                    </div>
-                                    <p className="text-sm text-[#94A3B8]">Advanced Secured</p>
-                                </div>
-                                <p className="text-3xl font-bold text-[#F1F5F9] ml-13">{userData.advancedItems}</p>
+                            <div className="flex-1">
+                                <p className="text-sm text-[#94A3B8] mb-1">Member Since</p>
+                                <p className="text-lg font-semibold text-[#F1F5F9]">{formatDate(userData.date_joined)}</p>
                             </div>
                         </div>
                     </div>
