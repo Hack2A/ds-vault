@@ -1,5 +1,6 @@
 import RegisterForm from "@/components/auth/regform";
 import Link from "next/link";
+import { Suspense } from "react";
 
 export default function Register() {
     return (
@@ -59,7 +60,13 @@ export default function Register() {
 
             {/* Right Side - Form */}
             <div className="w-full lg:w-1/2 h-screen flex items-center justify-center p-6">
-                <RegisterForm />
+                <Suspense fallback={
+                    <div className="w-full max-w-md flex items-center justify-center">
+                        <div className="text-[#94A3B8]">Loading...</div>
+                    </div>
+                }>
+                    <RegisterForm />
+                </Suspense>
             </div>
         </div>
     );
