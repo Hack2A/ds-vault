@@ -71,7 +71,8 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        # DB_PATH is set by Docker Compose; falls back to original path for local dev
+        'NAME': os.getenv('DB_PATH', str(BASE_DIR / 'db.sqlite3')),
     }
 }
 
