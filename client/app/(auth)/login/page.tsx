@@ -1,5 +1,6 @@
 import LoginForm from "@/components/auth/loginform";
 import Link from "next/link";
+import { Suspense } from "react";
 
 export default function Login() {
     return (
@@ -60,7 +61,13 @@ export default function Login() {
             {/* Right Side - Form */}
             <div className="w-full lg:w-1/2 h-screen flex items-center justify-center p-6">
                 <div className="w-full max-w-md">
-                    <LoginForm />
+                    <Suspense fallback={
+                        <div className="w-full max-w-md flex items-center justify-center">
+                            <div className="text-[#94A3B8]">Loading...</div>
+                        </div>
+                    }>
+                        <LoginForm />
+                    </Suspense>
                 </div>
             </div>
         </div>
