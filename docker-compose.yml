@@ -1,0 +1,50 @@
+services:
+
+  backend:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+
+      - vault_data:/app/Encryption/vault_users
+
+      - sqlite_data:/app/server/dbdata
+    environment:
+
+      - SECRET_KEY=django-insecure-change-this-in-production-use-a-strong-random-key
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost,127.0.0.1,backend,0.0.0.0
+
+      - DB_PATH=/app/server/dbdata/db.sqlite3
+
+      - EMAIL_HOST=smtp.gmail.com
+      - EMAIL_PORT=587
+      - EMAIL_HOST_USER=contact.hack2a@gmail.com
+      - EMAIL_HOST_PASSWORD=fxep ckyh voaw cjrd
+    networks:
+      - ds-vault-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+
+      - INTERNAL_API_URL=http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - ds-vault-network
+
+volumes:
+  vault_data:
+  sqlite_data:
+
+
+networks:
+  ds-vault-network:
+    driver: bridge
