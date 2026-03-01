@@ -72,3 +72,53 @@ npm run dev
 ```
 
 The application is now up and running across `http://localhost:3000` (frontend) and `http://localhost:8000` (backend).
+
+## ☁️ Deploying the Backend to Render
+
+The backend is production-ready and can be deployed to [Render](https://render.com) as a Docker-based web service.
+
+### Prerequisites
+- Your project pushed to a GitHub repository.
+- A free [Render](https://render.com) account connected to your GitHub.
+
+### Step-by-Step
+
+**1. Create a New Web Service on Render**
+- Go to [Render Dashboard](https://dashboard.render.com) → **New → Blueprint** (if using `render.yaml`) OR **New → Web Service**.
+- Select your GitHub repo.
+- If prompted for runtime, choose **Docker**.
+- Set the **Dockerfile Path** to `server/Dockerfile` and the **Build Context** to `.` (repo root).
+
+**2. Add a PostgreSQL Database**
+- In Render Dashboard → **New → PostgreSQL**.
+- Name it `ds-vault-db`, select the **Free** plan, and create it.
+- Copy the **Internal Database URL** from its dashboard.
+
+**3. Set Environment Variables**
+In your web service's **Environment** tab, add the following:
+
+| Variable | Value |
+|---|---|
+| `SECRET_KEY` | A long random string (Render can generate one) |
+| `DEBUG` | `False` |
+| `ALLOWED_HOSTS` | `your-service-name.onrender.com` |
+| `DATABASE_URL` | Internal connection string from your Render Postgres DB |
+| `CORS_ALLOWED_ORIGINS` | `https://your-frontend-url.com` |
+| `EMAIL_HOST_USER` | Your Gmail address |
+| `EMAIL_HOST_PASSWORD` | Your Gmail App Password |
+
+> **Tip**: See `.env.render.example` in this repo for a full reference of all variables.
+
+**4. Deploy**
+Click **Save and Deploy**. Render will:
+1. Build the Docker image (copies `server/`, `Encryption/`, `blockchain/` into the container).
+2. Run `python manage.py migrate` and `collectstatic`.
+3. Start the app with `gunicorn` on port `8000`.
+
+Your API will be live at:
+```
+https://your-service-name.onrender.com/api/
+```
+
+**5. (Optional) Using `render.yaml` Blueprint**
+A `render.yaml` file is included at the repo root. You can use **New → Blueprint** in Render to auto-provision both the web service and the PostgreSQL database in one click. After creating via Blueprint, manually set `EMAIL_HOST_USER` and `EMAIL_HOST_PASSWORD` in the environment tab since they are marked `sync: false` for security.
