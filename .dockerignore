@@ -1,0 +1,15 @@
+# Root .dockerignore — prevents sending huge unneeded files to Docker daemon
+.git
+.gitignore
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/venv
+**/.venv
+**/db.sqlite3
+**/.next
+**/out
+**/build
+README.md
+*.md
