@@ -89,6 +89,7 @@ class VaultCore:
             print(f"  [OK] AES-GCM Encrypted data stored")
 
             block_number = None
+            tx_hash = ""
             if mode == "advanced":
                 print(f"  [BLOCKCHAIN] Recording on blockchain...")
                 block_data = {
@@ -104,6 +105,19 @@ class VaultCore:
                 print(f"  [OK] Nonce={block.nonce}  |  Hash={block.hash[:24]}...")
                 print(f"  [OK] Recorded on blockchain at Block #{block.index}")
                 block_number = block.index
+                
+                # --- Web3 Integration ---
+                try:
+                    from Encryption.vault_api import _get_blockchain_flags, _store_on_chain
+                    use_bc, _ = _get_blockchain_flags()
+                    if use_bc:
+                        print(f"  [WEB3] Storing record on Ethereum Sepolia...")
+                        tx_hash_result = _store_on_chain(original_hash, "")
+                        if tx_hash_result:
+                            print(f"  [WEB3] Transaction Hash: {tx_hash_result}")
+                            tx_hash = tx_hash_result
+                except Exception as e:
+                    pass
             
             self.metadata[item_name] = {
                 "original_hash": original_hash,
@@ -116,6 +130,7 @@ class VaultCore:
                 "block_number": block_number,
                 "is_text": is_text,
                 "mode": mode,
+                "tx_hash": tx_hash if mode == "advanced" else "",
             }
             
             self._save_metadata()
@@ -199,6 +214,9 @@ class VaultCore:
         print(f"   Size : {meta['file_size']} bytes")
         if mode == "advanced":
             print(f"   Block: #{block_num}")
+            if "tx_hash" in meta and meta["tx_hash"]:
+                print(f"   Web3 : {meta['tx_hash']}")
+                print(f"   Verify: https://sepolia.etherscan.io/tx/{meta['tx_hash']}")
         else:
             print(f"   Block: N/A (Normal mode — no blockchain record)")
         

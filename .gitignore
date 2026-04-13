@@ -10,6 +10,12 @@ __pycache__/
 venv/
 env/
 ENV/
+ven/
+.venv/
+.env/
+# Catch-all for any virtualenv/pipenv/poetry venv folder
+**/site-packages/
+**/pyvenv.cfg
 
 # Vault data — never commit user data or encrypted files
 vault_users/
@@ -27,7 +33,23 @@ _vault_metadata.json
 .env
 .env.local
 
+# Web3 secrets — NEVER commit real keys
+.env.web3
+
+# Hardhat / Solidity build artifacts
+contracts/artifacts/
+contracts/cache/
+contracts/node_modules/
+contracts/coverage/
+contracts/coverage.json
+contracts/typechain-types/
+
+# Web3 Python cache
+web3/__pycache__/
+web3/tests/__pycache__/
+
 # Testing
 .pytest_cache/
 .coverage
 htmlcov/
+.agent
