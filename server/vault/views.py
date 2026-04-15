@@ -112,18 +112,26 @@ class StoreItemView(APIView):
                 name=name,
                 ciphertext=result["ciphertext"],
                 block_hash=result["block_hash"],
+                tx_hash=result.get("tx_hash", ""),
+                cid=result.get("cid", ""),
             )
-            return Response(
-                {
-                    "message": "Item encrypted and stored (advanced mode).",
-                    "item_name": vault_item.name,
-                    "is_advanced": True,
-                    "ciphertext": vault_item.ciphertext,
-                    "block_hash": vault_item.block_hash,
-                    "created_at": vault_item.created_at,
-                },
-                status=status.HTTP_201_CREATED,
-            )
+
+            response_data = {
+                "message": "Item encrypted and stored (advanced mode).",
+                "item_name": vault_item.name,
+                "is_advanced": True,
+                "ciphertext": vault_item.ciphertext,
+                "block_hash": vault_item.block_hash,
+                "created_at": vault_item.created_at,
+            }
+            if vault_item.tx_hash:
+                response_data["tx_hash"] = vault_item.tx_hash
+                response_data["etherscan_url"] = f"https://sepolia.etherscan.io/tx/0x{vault_item.tx_hash}"
+            if vault_item.cid:
+                response_data["cid"] = vault_item.cid
+                response_data["ipfs_url"] = f"https://gateway.pinata.cloud/ipfs/{vault_item.cid}"
+
+            return Response(response_data, status=status.HTTP_201_CREATED)
         else:
             vault_item = NormalVaultItem.objects.create(
                 user=user,
@@ -157,7 +165,7 @@ class ListVaultItemsView(APIView):
             'id', 'name', 'ciphertext', 'created_at'
         )
         advanced_items = AdvancedVaultItem.objects.filter(user=user).values(
-            'id', 'name', 'ciphertext', 'block_hash', 'created_at'
+            'id', 'name', 'ciphertext', 'block_hash', 'tx_hash', 'cid', 'created_at'
         )
 
         return Response(
@@ -180,6 +188,14 @@ class ListVaultItemsView(APIView):
                         "block_hash": item["block_hash"],
                         "is_advanced": True,
                         "created_at": item["created_at"],
+                        **({
+                            "tx_hash": item["tx_hash"],
+                            "etherscan_url": f"https://sepolia.etherscan.io/tx/0x{item['tx_hash']}",
+                        } if item.get("tx_hash") else {}),
+                        **({
+                            "cid": item["cid"],
+                            "ipfs_url": f"https://gateway.pinata.cloud/ipfs/{item['cid']}",
+                        } if item.get("cid") else {}),
                     }
                     for item in advanced_items
                 ],
@@ -297,6 +313,27 @@ class DecryptItemView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # ── Web3 on-chain verification (advanced mode only) ──────────────
+        chain_verified = None
+        if is_adv and hasattr(vault_item, 'tx_hash') and vault_item.tx_hash:
+            from Encryption.encryption import FileEncryption
+            try:
+                from Encryption.vault_api import _get_blockchain_flags, _verify_on_chain
+                use_bc, _ = _get_blockchain_flags()
+                if use_bc:
+                    current_hash = FileEncryption.compute_file_hash(plaintext_bytes)
+                    _verify_on_chain(current_hash, vault_item.name)
+                    chain_verified = True
+            except ValueError:
+                chain_verified = False
+                return Response(
+                    {"detail": "On-chain verification FAILED. Content may have been tampered with."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            except Exception:
+                chain_verified = None  # inconclusive — blockchain unreachable
+        # ── End Web3 verification ─────────────────────────────────────────
+
         try:
             plaintext = plaintext_bytes.decode("utf-8")
         except UnicodeDecodeError:
@@ -305,11 +342,14 @@ class DecryptItemView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        return Response(
-            {
-                "item_name": vault_item.name,
-                "plaintext": plaintext,
-                "is_advanced": is_adv,
-            },
-            status=status.HTTP_200_OK,
-        )
+        response_data = {
+            "item_name": vault_item.name,
+            "plaintext": plaintext,
+            "is_advanced": is_adv,
+        }
+        if chain_verified is not None:
+            response_data["chain_verified"] = chain_verified
+        if is_adv and hasattr(vault_item, 'tx_hash') and vault_item.tx_hash:
+            response_data["etherscan_url"] = f"https://sepolia.etherscan.io/tx/0x{vault_item.tx_hash}"
+
+        return Response(response_data, status=status.HTTP_200_OK)

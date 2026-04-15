@@ -20,6 +20,8 @@ export interface GetItemResponse {
 	item_name: string;
 	plaintext: string;
 	is_advanced: boolean;
+	chain_verified?: boolean;   // true if on-chain hash matched
+	etherscan_url?: string;     // Etherscan verification link
 }
 
 // Interface for vault item
@@ -29,7 +31,11 @@ export interface VaultItem {
 	ciphertext: string;
 	is_advanced: boolean;
 	created_at: string;
-	block_hash?: string; // Only present for advanced items
+	block_hash?: string;     // Only present for advanced items
+	tx_hash?: string;        // Ethereum transaction hash
+	etherscan_url?: string;  // Etherscan verification link
+	cid?: string;            // IPFS content identifier
+	ipfs_url?: string;       // IPFS gateway link
 }
 
 // Interface for get all items response

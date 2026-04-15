@@ -241,6 +241,8 @@ class VaultAPI:
                 "ciphertext": encrypted_data.hex(),
                 "block_hash": block.hash,
                 "item_name": item_name,
+                "tx_hash": tx_hash,
+                "cid": cid,
             }
 
     def decrypt(

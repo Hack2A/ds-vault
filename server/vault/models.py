@@ -28,6 +28,8 @@ class AdvancedVaultItem(models.Model):
     name = models.CharField(max_length=255)
     ciphertext = models.TextField()           # hex-encoded AES-GCM ciphertext
     block_hash = models.CharField(max_length=64)  # blockchain integrity hash
+    tx_hash = models.CharField(max_length=128, blank=True, default='')  # Ethereum transaction hash
+    cid = models.CharField(max_length=128, blank=True, default='')      # IPFS content identifier
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

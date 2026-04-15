@@ -1,15 +1,16 @@
 "use client";
 
-import { Lock, Shield } from "lucide-react";
+import { Lock, Shield, Link2 } from "lucide-react";
 
 type VaultItemProps = {
     id: string;
     name: string;
     isAdvanced: boolean;
+    txHash?: string;
     onClick: () => void;
 };
 
-export default function VaultItem({ id, name, isAdvanced, onClick }: VaultItemProps) {
+export default function VaultItem({ id, name, isAdvanced, txHash, onClick }: VaultItemProps) {
     return (
         <div
             onClick={onClick}
@@ -26,8 +27,14 @@ export default function VaultItem({ id, name, isAdvanced, onClick }: VaultItemPr
                     </div>
                     <div className="flex-1 min-w-0">
                         <h3 className="text-[#F1F5F9] font-medium truncate">{name}</h3>
-                        <p className="text-xs text-[#94A3B8] mt-0.5">
+                        <p className="text-xs text-[#94A3B8] mt-0.5 flex items-center gap-1">
                             {isAdvanced ? "Advanced Security" : "Standard Security"}
+                            {txHash && (
+                                <span className="inline-flex items-center gap-0.5 text-[#3B82F6]" title="Verified on Ethereum">
+                                    <Link2 className="w-3 h-3" />
+                                    On-chain
+                                </span>
+                            )}
                         </p>
                     </div>
                 </div>

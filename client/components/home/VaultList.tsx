@@ -11,6 +11,8 @@ type VaultItemData = {
     name: string;
     content: string;
     isAdvanced: boolean;
+    chainVerified?: boolean;
+    etherscanUrl?: string;
 };
 
 interface VaultListProps {
@@ -80,6 +82,8 @@ export default function VaultList({ refreshTrigger }: VaultListProps) {
                 name: response.item_name,
                 content: response.plaintext,
                 isAdvanced: response.is_advanced,
+                chainVerified: response.chain_verified,
+                etherscanUrl: response.etherscan_url,
             };
 
             setSelectedItem(fullItem);
@@ -184,6 +188,7 @@ export default function VaultList({ refreshTrigger }: VaultListProps) {
                                         id={item.id.toString()}
                                         name={item.name}
                                         isAdvanced={true}
+                                        txHash={item.tx_hash}
                                         onClick={() => handleViewItem(item)}
                                     />
                                 ))
