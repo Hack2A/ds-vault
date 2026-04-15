@@ -48,7 +48,7 @@ export interface GetAllItemsResponse {
 export const itemService = {
 	// Get all items
 	getAllItems: async (): Promise<GetAllItemsResponse> => {
-		const response = await apiClient.get<GetAllItemsResponse>("/vault/items/");
+		const response = await apiClient.get<GetAllItemsResponse>("/vault/items");
 		return response.data;
 	},
 
@@ -59,7 +59,7 @@ export const itemService = {
 			throw new Error("Seed is required when advanced mode is enabled");
 		}
 
-		return apiClient.post("/vault/store/", data);
+		return apiClient.post("/vault/store", data);
 	},
 
 	// Get a specific item
@@ -70,7 +70,7 @@ export const itemService = {
 		}
 
 		// Send data in request body for POST request
-		const response = await apiClient.post<GetItemResponse>("/vault/decrypt/", params);
+		const response = await apiClient.post<GetItemResponse>("/vault/decrypt", params);
 		return response.data;
 	},
 };
