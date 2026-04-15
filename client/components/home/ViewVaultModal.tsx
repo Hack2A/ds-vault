@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { X, Lock, Shield } from "lucide-react";
+import { X, Lock, Shield, ExternalLink, CheckCircle, AlertTriangle } from "lucide-react";
 
 type VaultItemData = {
     id: string;
     name: string;
     content: string;
     isAdvanced: boolean;
+    chainVerified?: boolean;
+    etherscanUrl?: string;
 };
 
 type ViewVaultModalProps = {
@@ -172,6 +174,44 @@ export default function ViewVaultModal({ isOpen, item, isLoading, onClose, onUnl
                                             This item is protected with advanced security
                                         </p>
                                     </div>
+                                )}
+
+                                {/* Blockchain Verification Badge */}
+                                {item.isAdvanced && item.chainVerified !== undefined && (
+                                    <div className={`p-3 border rounded-xl flex items-center justify-between ${
+                                        item.chainVerified
+                                            ? 'bg-emerald-500/10 border-emerald-500/30'
+                                            : 'bg-amber-500/10 border-amber-500/30'
+                                    }`}>
+                                        <div className="flex items-center gap-2">
+                                            {item.chainVerified ? (
+                                                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                                            ) : (
+                                                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                                            )}
+                                            <p className={`text-xs ${item.chainVerified ? 'text-emerald-400' : 'text-amber-400'}`}>
+                                                {item.chainVerified
+                                                    ? 'Blockchain verified — integrity confirmed on Ethereum'
+                                                    : 'Blockchain verification failed — integrity may be compromised'
+                                                }
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Etherscan Link */}
+                                {item.etherscanUrl && (
+                                    <a
+                                        href={item.etherscanUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 p-3 bg-[#3B82F6]/10 border border-[#3B82F6]/30 rounded-xl hover:bg-[#3B82F6]/20 transition-all group"
+                                    >
+                                        <ExternalLink className="w-4 h-4 text-[#3B82F6] shrink-0" />
+                                        <span className="text-xs text-[#3B82F6] group-hover:underline">
+                                            Verify on Etherscan
+                                        </span>
+                                    </a>
                                 )}
 
                                 <button

@@ -9,7 +9,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from Encryption.user_manager import UserManager
 from Encryption.vault_core import VaultCore
 
-
 class SecureVaultApp:
     def __init__(self):
         # users are stored in a vault_users/ folder relative to Encryption/
